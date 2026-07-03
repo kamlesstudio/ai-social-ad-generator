@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8080"
+    environment:
+      - ENVIRONMENT=development
+      - DEBUG=True
+    env_file:
+      - .env
+    volumes:
+      - ./app:/app/app
+      - ./tests:/app/tests
+    command: uvicorn app.main:app --reload --host 0.0.0.0 --port 8080
+    depends_on:
+      - redis
+    networks:
+      - ad-network
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - ad-network
+
+  test:
+    build: .
+    environment:
+      - ENVIRONMENT=test
+    env_file:
+      - .env
+    command: pytest tests/ -v
+    depends_on:
+      - app
+    networks:
+      - ad-network
+
+networks:
+  ad-network:
+    driver: bridge

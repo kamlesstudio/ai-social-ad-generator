@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Ad Generator - Create Viral Videos in Seconds</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+    <style>
+        /* ===== RESET & BASE ===== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0a0a0f;
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        a { text-decoration: none; color: inherit; }
+
+        /* ===== ANIMATED BACKGROUND ===== */
+        .bg-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(circle at 20% 50%, rgba(72, 0, 255, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(0, 200, 255, 0.06) 0%, transparent 50%),
+                radial-gradient(circle at 50% 0%, rgba(255, 0, 200, 0.04) 0%, transparent 50%);
+            z-index: -1;
+            pointer-events: none;
+        }
+        .bg-grid::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 60px 60px;
+        }
+
+        /* ===== GLOW ORBS ===== */
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.3;
+            pointer-events: none;
+            z-index: -1;
+            animation: float 20s infinite alternate ease-in-out;
+        }
+        .orb-1 { width: 600px; height: 600px; background: #6c3bf7; top: -200px; left: -200px; }
+        .orb-2 { width: 500px; height: 500px; background: #00c6ff; bottom: -100px; right: -100px; animation-delay: -5s; }
+        .orb-3 { width: 400px; height: 400px; background: #ff2d95; top: 50%; left: 50%; transform: translate(-50%, -50%); animation-delay: -10s; opacity: 0.15; }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -40px) scale(1.1); }
+            66% { transform: translate(-20px, 30px) scale(0.9); }
+            100% { transform: translate(40px, 20px) scale(1.05); }
+        }
+
+        /* ===== HEADER / NAV ===== */
+        .glass-header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(10, 10, 15, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding: 16px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 800;
+            font-size: 22px;
+            background: linear-gradient(135deg, #6c3bf7, #00c6ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .logo-icon { font-size: 28px; -webkit-text-fill-color: initial; }
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .credits-badge {
+            background: rgba(108, 59, 247, 0.2);
+            border: 1px solid rgba(108, 59, 247, 0.3);
+            padding: 8px 18px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #a78bfa;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-login {
+            padding: 8px 22px;
+            border-radius: 30px;
+            background: linear-gradient(135deg, #6c3bf7, #4f0bc7);
+            color: #fff;
+            font-weight: 600;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-login:hover { transform: scale(1.05); box-shadow: 0 0 30px rgba(108, 59, 247, 0.4); }
+        .btn-logout {
+            padding: 8px 22px;
+            border-radius: 30px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: #fff;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-logout:hover { background: rgba(255, 50, 50, 0.2); border-color: rgba(255, 50, 50, 0.3); }
+
+        /* ===== HERO ===== */
+        .hero {
+            text-align: center;
+            padding: 80px 20px 40px;
+        }
+        .hero-badge {
+            display: inline-block;
+            background: rgba(108, 59, 247, 0.15);
+            border: 1px solid rgba(108, 59, 247, 0.2);
+            padding: 6px 20px;
+            border-radius: 30px;
+            font-size: 13px;
+            color: #a78bfa;
+            margin-bottom: 20px;
+            letter-spacing: 0.5px;
+        }
+        .hero h1 {
+            font-size: clamp(40px, 7vw, 72px);
+            font-weight: 900;
+            line-height: 1.05;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #ffffff 30%, #a78bfa 60%, #00c6ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero p {
+            font-size: 18px;
+            color: rgba(255,255,255,0.6);
+            max-width: 560px;
+            margin: 0 auto 30px;
+            line-height: 1.7;
+        }
+        .hero-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .btn-primary {
+            padding: 14px 40px;
+            border-radius: 50px;
+            background: linear-gradient(135deg, #6c3bf7, #4f0bc7);
+            color: #fff;
+            font-weight: 700;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 0 40px rgba(108, 59, 247, 0.25);
+        }
+        .btn-primary:hover { transform: translateY(-2px) scale(1.02); box-shadow: 0 0 60px rgba(108, 59, 247, 0.4); }
+        .btn-secondary {
+            padding: 14px 40px;
+            border-radius: 50px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: #fff;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-secondary:hover { background: rgba(255,255,255,0.12); }
+
+        /* ===== GENERATOR SECTION ===== */
+        .section {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px 80px;
+        }
+        .section-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        .section-sub {
+            color: rgba(255,255,255,0.4);
+            margin-bottom: 30px;
+            font-size: 15px;
+        }
+
+        /* ===== GENERATOR CARD ===== */
+        .generator-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 24px;
+            padding: 40px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 6px;
+            letter-spacing: 0.3px;
+        }
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 14px 16px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            color: #fff;
+            font-size: 15px;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #6c3bf7;
+            background: rgba(108, 59, 247, 0.05);
+            box-shadow: 0 0 30px rgba(108, 59, 247, 0.05);
+        }
+        .form-group textarea { min-height: 90px; resize: vertical; }
+        .form-group select option { background: #1a1a2e; color: #fff; }
+
+        .btn-generate {
+            width: 100%;
+            padding: 18px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #6c3bf7, #4f0bc7);
+            color: #fff;
+            font-weight: 700;
+            font-size: 18px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+        .btn-generate:hover:not(:disabled) { transform: scale(1.01); box-shadow: 0 0 50px rgba(108, 59, 247, 0.3); }
+        .btn-generate:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* ===== PROGRESS ===== */
+        .progress-container {
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 14px;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .progress-bar-track {
+            width: 100%;
+            height: 6px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #6c3bf7, #00c6ff);
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+        .progress-status {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: rgba(255,255,255,0.5);
+        }
+        .task-id-text {
+            font-size: 12px;
+            color: rgba(255,255,255,0.25);
+            margin-top: 8px;
+            word-break: break-all;
+        }
+
+        /* ===== SHOWCASE GRID ===== */
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 24px;
+            margin-top: 20px;
+        }
+        .video-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: all 0.4s;
+            cursor: pointer;
+        }
+        .video-card:hover {
+            transform: translateY(-6px);
+            border-color: rgba(108, 59, 247, 0.3);
+            box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+        }
+        .video-card video {
+            width: 100%;
+            aspect-ratio: 9 / 16;
+            object-fit: cover;
+            display: block;
+            background: #000;
+        }
+        .video-card-info {
+            padding: 14px 16px;
+        }
+        .video-card-info h4 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .video-card-info p {
+            font-size: 12px;
+            color: rgba(255,255,255,0.35);
+        }
+
+        /* ===== RESULT VIDEO ===== */
+        .result-container {
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 16px;
+            border: 1px solid rgba(108, 59, 247, 0.15);
+            display: none;
+        }
+        .result-container.visible { display: block; }
+        .result-container video {
+            width: 100%;
+            max-height: 500px;
+            border-radius: 12px;
+            background: #000;
+        }
+        .result-container .download-btn {
+            display: inline-block;
+            margin-top: 12px;
+            padding: 10px 24px;
+            border-radius: 30px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #fff;
+            font-size: 14px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .result-container .download-btn:hover { background: rgba(255,255,255,0.15); }
+
+        /* ===== STATS BAR ===== */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 20px;
+            margin: 40px 0 60px;
+        }
+        .stat-item {
+            text-align: center;
+            padding: 20px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.04);
+        }
+        .stat-number {
+            font-size: 32px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #a78bfa, #00c6ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .stat-label {
+            font-size: 13px;
+            color: rgba(255,255,255,0.4);
+            margin-top: 4px;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .glass-header { padding: 12px 20px; flex-direction: column; align-items: stretch; text-align: center; }
+            .nav-actions { justify-content: center; }
+            .generator-card { padding: 24px; }
+            .hero { padding: 40px 16px 20px; }
+        }
+
+        /* ===== SCROLLBAR ===== */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0a0a0f; }
+        ::-webkit-scrollbar-thumb { background: #6c3bf7; border-radius: 3px; }
+
+        /* ===== TOAST ===== */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            padding: 16px 28px;
+            border-radius: 14px;
+            background: rgba(20, 20, 30, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.08);
+            color: #fff;
+            font-size: 14px;
+            max-width: 400px;
+            z-index: 999;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: none;
+        }
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .toast.success { border-left: 4px solid #4CAF50; }
+        .toast.error { border-left: 4px solid #f44336; }
+        .toast.info { border-left: 4px solid #2196F3; }
+    </style>
+</head>
+<body>
+
+<!-- ===== BACKGROUND ===== -->
+<div class="bg-grid"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<!-- ===== TOAST ===== -->
+<div id="toast" class="toast"></div>
+
+<!-- ===== HEADER ===== -->
+<header class="glass-header">
+    <div class="logo">
+        <span class="logo-icon">🎬</span>
+        AI Ad Generator
+    </div>
+    <div class="nav-actions">
+        <span class="credits-badge">💰 <span id="headerCredits">0</span> credits</span>
+        <span id="userDisplay" style="color: rgba(255,255,255,0.6); font-size: 14px;"></span>
+        <a href="/login" class="btn-login" id="loginBtn">🔐 Login</a>
+        <button class="btn-logout" id="logoutBtn" style="display:none;" onclick="logout()">🚪 Logout</button>
+    </div>
+</header>
+
+<!-- ===== HERO ===== -->
+<section class="hero">
+    <div class="hero-badge">⚡ AI-Powered • 6-Second Videos • Social Media Ready</div>
+    <h1>Create Viral<br/>Ad Videos in Seconds</h1>
+    <p>Enter your product details and let AI generate a stunning social media ad video. No editing skills needed.</p>
+    <div class="hero-actions">
+        <button class="btn-primary" onclick="document.getElementById('generator').scrollIntoView({behavior:'smooth'})">✨ Try Now</button>
+        <button class="btn-secondary" onclick="document.getElementById('showcase').scrollIntoView({behavior:'smooth'})">🎥 See Examples</button>
+    </div>
+</section>
+
+<!-- ===== STATS ===== -->
+<div class="section" style="padding-top: 0;">
+    <div class="stats-bar">
+        <div class="stat-item"><div class="stat-number" id="statVideos">12</div><div class="stat-label">Videos Generated</div></div>
+        <div class="stat-item"><div class="stat-number">4.8</div><div class="stat-label">⭐ Avg. Rating</div></div>
+        <div class="stat-item"><div class="stat-number">2.3s</div><div class="stat-label">Avg. Generation</div></div>
+        <div class="stat-item"><div class="stat-number">🎯</div><div class="stat-label">AI Optimized</div></div>
+    </div>
+</div>
+
+<!-- ===== GENERATOR ===== -->
+<section class="section" id="generator">
+    <h2 class="section-title">✨ Generate Your Ad</h2>
+    <p class="section-sub">Enter your product details and let AI do the magic</p>
+
+    <div class="generator-card">
+        <form id="generateForm">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>📱 Platform</label>
+                    <select id="platform" required>
+                        <option value="tiktok">TikTok</option>
+                        <option value="instagram">Instagram Reels</option>
+                        <option value="youtube">YouTube Shorts</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>⏱️ Duration</label>
+                    <select id="duration">
+                        <option value="4">4 seconds (Punchy)</option>
+                        <option value="6" selected>6 seconds (Balanced)</option>
+                        <option value="8">8 seconds (Story-driven)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>🏷️ Product Name</label>
+                <input type="text" id="productName" placeholder="e.g., Wireless Earbuds Pro" required />
+            </div>
+            <div class="form-group">
+                <label>📝 Product Description</label>
+                <textarea id="productDesc" placeholder="Describe your product in detail... (e.g., Premium wireless earbuds with active noise cancellation, 24-hour battery life, and crystal-clear sound quality.)" required></textarea>
+            </div>
+            <button type="submit" class="btn-generate" id="generateBtn">
+                <span>🚀</span> Generate AI Video
+            </button>
+        </form>
+
+        <!-- Progress -->
+        <div id="progressContainer" class="progress-container" style="display:none;">
+            <div class="progress-status">
+                <span id="progressText">⏳ Generating...</span>
+                <span id="progressPercent">0%</span>
+            </div>
+            <div class="progress-bar-track">
+                <div class="progress-bar-fill" id="progressFill"></div>
+            </div>
+            <div class="task-id-text" id="taskIdDisplay"></div>
+        </div>
+
+        <!-- Result -->
+        <div id="resultContainer" class="result-container">
+            <video id="resultVideo" controls playsinline></video>
+            <div style="display:flex; gap:12px; margin-top:10px; flex-wrap:wrap;">
+                <button class="download-btn" onclick="downloadVideo()">📥 Download Video</button>
+                <button class="download-btn" onclick="generateAgain()">🔄 Generate Another</button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== SHOWCASE ===== -->
+<section class="section" id="showcase">
+    <h2 class="section-title">🎥 Sample Videos</h2>
+    <p class="section-sub">Check out these examples generated with AI</p>
+    <div class="video-grid" id="videoGrid">
+        <!-- Will be populated by JavaScript -->
+        <div style="text-align:center; padding:40px; color:rgba(255,255,255,0.3); grid-column:1/-1;">Loading sample videos...</div>
+    </div>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<footer style="text-align:center; padding:40px 20px; border-top:1px solid rgba(255,255,255,0.04); color:rgba(255,255,255,0.15); font-size:13px;">
+    <p>Built with ❤️ • AI Ad Generator v3.0 • Powered by Veo 3</p>
+</footer>
+
+<script>
+    // ===== CONFIG =====
+    const API_BASE = 'http://localhost:8000/api/v1';
+    const AUTH_BASE = 'http://localhost:8000/api/v1/auth';
+
+    // ===== GET USER ID =====
+    function getUserId() {
+        const user = JSON.parse(localStorage.getItem('user') || 'null');
+        if (user && user.phone) {
+            console.log('👤 Using user from localStorage:', user.phone);
+            return user.phone;
+        }
+        // Fallback for testing
+        console.log('👤 Using fallback user: +919999999999');
+        return '+919999999999';
+    }
+
+    // ===== DOM REFS =====
+    const form = document.getElementById('generateForm');
+    const generateBtn = document.getElementById('generateBtn');
+    const progressContainer = document.getElementById('progressContainer');
+    const progressFill = document.getElementById('progressFill');
+    const progressText = document.getElementById('progressText');
+    const progressPercent = document.getElementById('progressPercent');
+    const taskIdDisplay = document.getElementById('taskIdDisplay');
+    const resultContainer = document.getElementById('resultContainer');
+    const resultVideo = document.getElementById('resultVideo');
+    const videoGrid = document.getElementById('videoGrid');
+    const headerCredits = document.getElementById('headerCredits');
+    const userDisplay = document.getElementById('userDisplay');
+    const loginBtn = document.getElementById('loginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    // ===== TOAST =====
+    function showToast(message, type = 'info') {
+        const t = document.getElementById('toast');
+        t.textContent = message;
+        t.className = `toast ${type} show`;
+        clearTimeout(t._hide);
+        t._hide = setTimeout(() => t.classList.remove('show'), 4000);
+    }
+
+    // ===== CREDITS - FIXED =====
+    async function fetchCredits() {
+        try {
+            const userId = getUserId();
+            const res = await fetch(`${API_BASE}/credits/balance`, {
+                headers: {
+                    'X-User-ID': userId
+                }
+            });
+            const data = await res.json();
+            headerCredits.textContent = data.balance || 0;
+            return data.balance;
+        } catch (e) {
+            console.warn('Credits fetch failed:', e);
+            return 0;
+        }
+    }
+
+    // ===== USER STATE =====
+    function updateUserUI() {
+        const token = localStorage.getItem('access_token');
+        const user = JSON.parse(localStorage.getItem('user') || 'null');
+        if (token && user) {
+            loginBtn.style.display = 'none';
+            logoutBtn.style.display = 'inline-block';
+            userDisplay.textContent = `👤 ${user.name || user.phone}`;
+        } else {
+            loginBtn.style.display = 'inline-block';
+            logoutBtn.style.display = 'none';
+            userDisplay.textContent = '';
+        }
+    }
+
+    function logout() {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('user');
+        updateUserUI();
+        showToast('Logged out successfully', 'success');
+    }
+
+    // ===== GENERATE VIDEO - FIXED =====
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const platform = document.getElementById('platform').value;
+        const productName = document.getElementById('productName').value.trim();
+        const productDesc = document.getElementById('productDesc').value.trim();
+        const duration = parseInt(document.getElementById('duration').value);
+
+        if (!productName || !productDesc) {
+            showToast('Please fill in all fields', 'error');
+            return;
+        }
+
+        const payload = { 
+            platform, 
+            product_name: productName, 
+            product_description: productDesc, 
+            duration_seconds: duration 
+        };
+
+        generateBtn.disabled = true;
+        generateBtn.innerHTML = '<span>⏳</span> Starting...';
+        resultContainer.classList.remove('visible');
+        progressContainer.style.display = 'block';
+        progressFill.style.width = '0%';
+        progressPercent.textContent = '0%';
+        progressText.textContent = '⏳ Initializing AI...';
+
+        try {
+            const userId = getUserId();
+            console.log('📤 Sending request for user:', userId);
+            
+            const res = await fetch(`${API_BASE}/generate`, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-User-ID': userId
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.detail || 'Generation failed');
+            }
+
+            const data = await res.json();
+            const taskId = data.task_id;
+            taskIdDisplay.textContent = `Task ID: ${taskId}`;
+            showToast(`✅ Task ${taskId.slice(0,8)} started!`, 'success');
+            await pollStatus(taskId);
+
+        } catch (error) {
+            showToast('❌ ' + error.message, 'error');
+            progressText.textContent = '❌ Failed: ' + error.message;
+        } finally {
+            generateBtn.disabled = false;
+            generateBtn.innerHTML = '<span>🚀</span> Generate AI Video';
+            fetchCredits();
+        }
+    });
+
+    // ===== POLL STATUS - FIXED =====
+    async function pollStatus(taskId) {
+        let attempts = 0;
+        const maxAttempts = 120; // 120 * 3 seconds = 6 minutes max
+        
+        // Show initial progress
+        progressText.textContent = '⏳ Starting generation...';
+        
+        while (attempts < maxAttempts) {
+            try {
+                const userId = getUserId();
+                const res = await fetch(`${API_BASE}/status/${taskId}`, {
+                    headers: {
+                        'X-User-ID': userId
+                    }
+                });
+                
+                if (!res.ok) {
+                    console.warn('Status check failed:', res.status);
+                    attempts++;
+                    await sleep(3000);
+                    continue;
+                }
+                
+                const data = await res.json();
+                const progress = data.progress || 0;
+                const status = data.status || 'pending';
+                const message = data.message || '';
+                
+                // Update progress bar
+                progressFill.style.width = `${progress}%`;
+                progressPercent.textContent = `${progress}%`;
+                
+                // Update status text
+                if (message) {
+                    progressText.textContent = message;
+                } else {
+                    const statusMessages = {
+                        'pending': '⏳ Queued...',
+                        'processing': `🎬 AI is creating your video... (${progress}%)`,
+                        'completed': '✅ Video generated!',
+                        'failed': '❌ Generation failed'
+                    };
+                    progressText.textContent = statusMessages[status] || `⏳ Status: ${status}`;
+                }
+                
+                // Log progress
+                console.log(`📊 Task ${taskId}: ${progress}% - ${status}`);
+                
+                // Check completion
+                if (status === 'completed') {
+                    progressFill.style.width = '100%';
+                    progressPercent.textContent = '100%';
+                    progressText.textContent = '✅ Video generated!';
+                    showVideo(data.video_url);
+                    return;
+                } else if (status === 'failed') {
+                    progressText.textContent = '❌ Failed: ' + (data.error_message || 'Unknown error');
+                    showToast('❌ Generation failed', 'error');
+                    return;
+                }
+                
+                attempts++;
+                await sleep(3000); // Check every 3 seconds
+                
+            } catch (e) {
+                console.warn('Poll error:', e);
+                attempts++;
+                await sleep(3000);
+            }
+        }
+        
+        // Timeout
+        progressText.textContent = '⏱️ Timeout. Please check status manually.';
+        showToast('⏱️ Generation took too long', 'error');
+    }
+
+    function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    // ===== SHOW VIDEO =====
+    function showVideo(url) {
+        resultContainer.classList.add('visible');
+        resultVideo.src = url;
+        resultVideo.load();
+        resultVideo.play().catch(() => {});
+        showToast('🎬 Video ready!', 'success');
+        fetchCredits();
+        loadShowcase();
+    }
+
+    function downloadVideo() {
+        const a = document.createElement('a');
+        a.href = resultVideo.src;
+        a.download = `ai_ad_${Date.now()}.mp4`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        showToast('📥 Download started!', 'info');
+    }
+
+    function generateAgain() {
+        resultContainer.classList.remove('visible');
+        resultVideo.src = '';
+        document.getElementById('productName').value = '';
+        document.getElementById('productDesc').value = '';
+        progressContainer.style.display = 'none';
+        progressFill.style.width = '0%';
+        document.getElementById('productName').focus();
+        showToast('🔄 Ready for new video!', 'info');
+    }
+
+    // ===== SHOWCASE =====
+    async function loadShowcase() {
+        try {
+            const videos = [
+                'https://storage.googleapis.com/ai-ad-videos-kamlesh-2026/demo/sample.mp4',
+                'https://storage.googleapis.com/ai-ad-videos-kamlesh-2026/generated/veo_1783027529.mp4',
+                'https://storage.googleapis.com/ai-ad-videos-kamlesh-2026/generated/veo_1783027848.mp4',
+                'https://storage.googleapis.com/ai-ad-videos-kamlesh-2026/generated/veo_1783059910.mp4',
+                'https://storage.googleapis.com/ai-ad-videos-kamlesh-2026/generated/veo_1783063283.mp4',
+                 'https://storage.googleapis.com/ai-ad-videos-kamlesh-2026/superbike_outputs/1783084633/2338348380925848298/sample_0.mp4',
+                 'https://storage.googleapis.com/ai-ad-videos-kamlesh-2026/superbike_outputs/1783084711/16357028676305151989/sample_0.mp4',
+                 ' https://storage.googleapis.com/ai-ad-videos-kamlesh-2026/superbike_outputs/1783084883/16394938948809900248/sample_0.mp4',
+                 'https://storage.googleapis.com/ai-ad-videos-kamlesh-2026/superbike_outputs/1783084984/4482940677311913254/sample_0.mp4',
+                 'https://storage.googleapis.com/ai-ad-videos-kamlesh-2026/veo_ga_outputs/1783083645/5591500133460136241/sample_0.mp4'
+            ];
+
+            videoGrid.innerHTML = '';
+            videos.forEach((url, i) => {
+                const card = document.createElement('div');
+                card.className = 'video-card';
+                card.innerHTML = `
+                    <video src="${url}" muted playsinline></video>
+                    <div class="video-card-info">
+                        <h4>Sample ${i+1}</h4>
+                        <p>AI Generated • 6s</p>
+                    </div>
+                `;
+                card.addEventListener('click', () => {
+                    const vid = card.querySelector('video');
+                    vid.muted = false;
+                    vid.play().catch(() => {});
+                });
+                card.querySelector('video').addEventListener('loadeddata', () => {
+                    card.querySelector('video').play().catch(() => {});
+                });
+                videoGrid.appendChild(card);
+            });
+        } catch (e) {
+            videoGrid.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.3);">Could not load samples</div>`;
+        }
+    }
+
+    // ===== INIT =====
+    fetchCredits();
+    updateUserUI();
+    loadShowcase();
+
+    // Auto-refresh credits every 30s
+    setInterval(fetchCredits, 30000);
+</script>
+</body>
+</html>

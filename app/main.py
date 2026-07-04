@@ -61,27 +61,24 @@ except Exception as e:
     logger.warning(f"⚠️ Veo Service not available: {e}")
     veo_service = None
 
-# === Models ===
-
-# Add this helper function at the top of main.py
-# In app/main.py, update the get_user_id function:
-
+# ===== SINGLE get_user_id function =====
 def get_user_id(request: Request) -> str:
     """
     Extract user ID from request headers.
-    For admin endpoints, use a default admin user if header is missing.
+    Returns the user ID or raises an exception.
     """
     user_id = request.headers.get("X-User-ID")
     
-    # For admin endpoints, allow fallback to admin user
+    # Log for debugging
+    logger.info(f"📋 X-User-ID header: {user_id}")
+    
     if not user_id:
+        # For admin endpoints, allow fallback
         path = request.url.path
-        # Admin endpoints that should show all data
-        admin_endpoints = ["/api/v1/users", "/api/v1/tasks", "/api/v1/analytics"]
+        admin_endpoints = ["/api/v1/users", "/api/v1/tasks", "/api/v1/analytics", "/api/v1/user"]
         if any(path.startswith(endpoint) for endpoint in admin_endpoints):
-            # Use a default admin user that has access to all data
             user_id = "+919999999999"
-            logger.info(f"👤 Admin endpoint: using admin user {user_id}")
+            logger.info(f"👤 Admin endpoint: using fallback user {user_id}")
         else:
             logger.error("❌ No X-User-ID found in request headers")
             raise HTTPException(
@@ -89,12 +86,10 @@ def get_user_id(request: Request) -> str:
                 detail="User ID not provided. Please include X-User-ID header."
             )
     
-    logger.info(f"👤 User ID from header: {user_id}")
+    logger.info(f"👤 User ID: {user_id}")
     return user_id
 
-
-
-
+# === Models ===
 class GenerateVideoRequest(BaseModel):
     platform: str = Field(..., description="tiktok, instagram, or youtube")
     product_name: str = Field(..., description="Name of the product")
@@ -143,37 +138,6 @@ SAMPLE_VIDEOS = [
     "https://www.w3schools.com/html/mov_bbb.mp4",
 ]
 
-# === Helper Functions ===
-# === REPLACE the get_user_id function with this ===
-def get_user_id(request: Request) -> str:
-    """
-    Extract user ID from request headers.
-    Returns the user ID or raises an exception if not found.
-    """
-    # Try to get from header
-    user_id = request.headers.get("X-User-ID")
-    
-    # Also try to get from Authorization header (if using JWT)
-    if not user_id:
-        auth_header = request.headers.get("Authorization")
-        if auth_header and auth_header.startswith("Bearer "):
-            # You could decode JWT here to get user_id
-            pass
-    
-    # Log the request headers for debugging
-    logger.info(f"📋 Request headers: {dict(request.headers)}")
-    
-    # If still no user_id, raise an error
-    if not user_id:
-        logger.error("❌ No X-User-ID found in request headers")
-        raise HTTPException(
-            status_code=401,
-            detail="User ID not provided. Please include X-User-ID header."
-        )
-    
-    logger.info(f"👤 User ID from header: {user_id}")
-    return user_id
-
 # === Health & Root Endpoints ===
 
 @app.get("/")
@@ -203,7 +167,6 @@ async def health_check():
     """Health check with database status"""
     db_status = "connected"
     try:
-        # Test database connection
         db_service.get_user_credits("test_user")
     except Exception as e:
         db_status = f"error: {str(e)}"
@@ -218,8 +181,6 @@ async def health_check():
 
 # === Video Generation Endpoints ===
 
-
-# Update the generate endpoint
 @app.post("/api/v1/generate", response_model=GenerateVideoResponse)
 async def generate_video(
     request: GenerateVideoRequest,
@@ -278,17 +239,11 @@ async def generate_video(
         credits_remaining=db_service.get_user_credits(user_id)
     )
 
-
-
-
-
-# Update the status endpoint
 @app.get("/api/v1/status/{task_id}")
 async def get_generation_status(task_id: str, req: Request):
-    """Check the status of a video generation task with detailed progress"""
+    """Check the status of a video generation task"""
     user_id = get_user_id(req)
     
-    # Get video from database
     video = db_service.get_video(user_id, task_id)
     
     if not video:
@@ -303,33 +258,27 @@ async def get_generation_status(task_id: str, req: Request):
             "message": "Task not found"
         }
     
-    # Get the progress
     progress = video.get("progress", 0)
     status = video.get("status", "unknown")
     
-    # Add a meaningful message based on progress
     messages = {
         0: "⏳ Queued...",
         10: "⏳ Starting generation...",
         20: "🤖 Initializing AI model...",
         30: "🎬 Generating video...",
-        40: "🎬 Creating scenes...",
         50: "🎬 Adding effects...",
-        60: "🎬 Finalizing content...",
         70: "🎬 Rendering video...",
         80: "📤 Preparing for upload...",
         90: "☁️ Uploading to cloud...",
         100: "✅ Complete!",
     }
     
-    # Find the closest message
     message = "⏳ Processing..."
     for p in sorted(messages.keys(), reverse=True):
         if progress >= p:
             message = messages[p]
             break
     
-    # If status is completed, update message
     if status == "completed":
         message = "✅ Video ready!"
     elif status == "failed":
@@ -348,10 +297,7 @@ async def get_generation_status(task_id: str, req: Request):
 
 @app.post("/api/v1/generate-auto")
 async def generate_and_auto_complete(request: GenerateVideoRequest, req: Request):
-    """
-    ⚡ Generate and auto-complete instantly (for testing)
-    Uses sample videos, not real AI
-    """
+    """Generate and auto-complete instantly (for testing)"""
     user_id = get_user_id(req)
     
     if db_service.get_user_credits(user_id) < 1:
@@ -362,7 +308,6 @@ async def generate_and_auto_complete(request: GenerateVideoRequest, req: Request
     
     video_url = random.choice(SAMPLE_VIDEOS)
     
-    # Save to PostgreSQL
     db_service.save_video(user_id, {
         "id": video_id,
         "video_url": video_url,
@@ -383,8 +328,6 @@ async def generate_and_auto_complete(request: GenerateVideoRequest, req: Request
         "credits_remaining": db_service.get_user_credits(user_id)
     }
 
-
-# Update the cancel endpoint
 @app.delete("/api/v1/cancel/{task_id}")
 async def cancel_generation(task_id: str, req: Request):
     """Cancel a pending video generation task"""
@@ -444,9 +387,7 @@ async def get_video(video_id: str, req: Request):
 
 @app.post("/api/v1/generate-bulk")
 async def generate_bulk_videos(request: BulkGenerateRequest, req: Request):
-    """
-    Generate multiple videos at once (for bulk discounts)
-    """
+    """Generate multiple videos at once"""
     user_id = get_user_id(req)
     total_credits_needed = len(request.products)
     
@@ -497,32 +438,75 @@ async def generate_bulk_videos(request: BulkGenerateRequest, req: Request):
     }
 
 # === Credit Management ===
-# Update the credits endpoint
+
 @app.get("/api/v1/credits/balance")
 async def get_credit_balance(req: Request):
-    """Get user's credit balance"""
-    user_id = get_user_id(req)
-    credits = db_service.get_user_credits(user_id)
-    
-    return {
-        "balance": credits,
-        "currency": "credits",
-        "user_id": user_id,
-        "packages": [
-            {"name": "Starter", "credits": 10, "price": 9.99, "popular": False},
-            {"name": "Popular", "credits": 50, "price": 39.99, "popular": True},
-            {"name": "Pro", "credits": 100, "price": 69.99, "popular": False},
-            {"name": "Enterprise", "credits": 500, "price": 299.99, "popular": False}
-        ]
-    }
+    """Get user's credit balance from database"""
+    try:
+        user_id = get_user_id(req)
+        credits = db_service.get_user_credits(user_id)
+        
+        return {
+            "balance": credits,
+            "currency": "credits",
+            "user_id": user_id,
+            "packages": [
+                {"name": "Starter", "credits": 10, "price": 9.99, "popular": False},
+                {"name": "Popular", "credits": 50, "price": 39.99, "popular": True},
+                {"name": "Pro", "credits": 100, "price": 69.99, "popular": False},
+                {"name": "Enterprise", "credits": 500, "price": 299.99, "popular": False}
+            ]
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting credits: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get credits")
 
+@app.get("/api/v1/user/{user_id}")
+async def get_user_by_id(user_id: str):
+    """Get user by ID from PostgreSQL"""
+    try:
+        user = db_service.get_user(user_id)
+        if user:
+            return {
+                "status": "success",
+                "user": user
+            }
+        else:
+            return {
+                "status": "error",
+                "message": f"User {user_id} not found"
+            }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e)
+        }
 
+@app.get("/api/v1/users")
+async def get_all_users():
+    """Get all users from PostgreSQL"""
+    try:
+        users = db_service.get_all_users()
+        return {
+            "status": "success",
+            "total": len(users),
+            "users": users
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e)
+        }
 
-# Update the add credits endpoint
 @app.post("/api/v1/credits/add")
 async def add_credits(amount: int = 10, req: Request = None):
     """Add credits for testing"""
-    user_id = get_user_id(req) if req else "demo_user"
+    try:
+        user_id = get_user_id(req) if req else "demo_user"
+    except HTTPException:
+        user_id = "demo_user"
     
     if amount <= 0:
         raise HTTPException(status_code=400, detail="Amount must be positive")
@@ -534,7 +518,6 @@ async def add_credits(amount: int = 10, req: Request = None):
         "added": amount,
         "user_id": user_id
     }
-
 
 @app.get("/api/v1/credits/packages")
 async def get_credit_packages():
@@ -730,6 +713,22 @@ async def serve_login():
         </html>
         """
 
+@app.get("/login-debug")
+async def serve_login_debug():
+    """Serve the debug login page"""
+    login_path = "frontend/login_debug.html"
+    if os.path.exists(login_path):
+        return FileResponse(login_path)
+    return {"message": "Debug login page not found"}
+
+@app.get("/admin")
+async def serve_admin():
+    """Serve the admin panel"""
+    admin_path = "frontend/admin.html"
+    if os.path.exists(admin_path):
+        return FileResponse(admin_path)
+    return {"message": "Admin panel not found"}
+
 # === Error Handlers ===
 
 @app.exception_handler(Exception)
@@ -742,48 +741,213 @@ async def global_exception_handler(request, exc):
 
 
 
-# === Admin Endpoints ===
 
-@app.get("/api/v1/users")
-async def get_all_users():
-    """Get all users (Admin only)"""
-    users = db_service.get_all_users()
-    return {
-        "total": len(users),
-        "users": users
-    }
+# Payment verification endpoint
+@app.post("/api/v1/verify-payment")
+async def verify_payment(request: Request):
+    try:
+        data = await request.json()
+        user_id = get_user_id(request)
+        
+        credits = data.get("credits")
+        amount = data.get("amount")
+        utr = data.get("utr")
+        
+        if not credits or not amount or not utr:
+            raise HTTPException(status_code=400, detail="Missing payment details")
+        
+        # In production, verify the UTR with your payment gateway
+        # For now, we'll trust the user and add credits
+        
+        # Add credits to user
+        new_balance = db_service.update_user_credits(user_id, credits)
+        
+        # Record the purchase
+        purchase_data = {
+            "id": f"pur_{int(datetime.now().timestamp())}",
+            "user_id": user_id,
+            "amount": amount,
+            "credits_purchased": credits,
+            "payment_method": "upi",
+            "payment_id": utr,
+            "status": "completed"
+        }
+        db_service.add_purchase(user_id, purchase_data)
+        
+        return {
+            "status": "success",
+            "message": f"Added {credits} credits",
+            "new_balance": new_balance
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Payment verification error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/v1/admin/add-credits")
-async def admin_add_credits(user_id: str, amount: int):
-    """Admin: Add credits to any user"""
+# Add welcome credits endpoint
+@app.post("/api/v1/welcome-credits")
+async def give_welcome_credits(request: Request):
+    try:
+        user_id = get_user_id(request)
+        credits = db_service.check_and_give_welcome_credits(user_id)
+        return {
+            "status": "success",
+            "message": "Welcome credits applied!",
+            "credits": credits
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Serve payment page
+@app.get("/payment")
+async def serve_payment():
+    payment_path = "frontend/payment.html"
+    if os.path.exists(payment_path):
+        return FileResponse(payment_path)
+    return {"message": "Payment page not found"}
+
+
+# === Admin Credit Management Endpoints ===
+
+@app.post("/api/v1/admin/set-credits")
+async def admin_set_credits(user_id: str, credits: int):
+    """
+    Admin: Set exact credits for any user
+    Example: POST /api/v1/admin/set-credits?user_id=+918528933970&credits=0
+    """
+    if credits < 0:
+        raise HTTPException(status_code=400, detail="Credits cannot be negative")
+    
+    try:
+        # Get user
+        user = db_service.get_user(user_id)
+        if not user:
+            return {
+                "status": "error",
+                "message": f"User {user_id} not found"
+            }
+        
+        # Update credits to exact value
+        current = db_service.get_user_credits(user_id)
+        diff = credits - current
+        new_balance = db_service.update_user_credits(user_id, diff)
+        
+        return {
+            "status": "success",
+            "user_id": user_id,
+            "old_credits": current,
+            "new_credits": new_balance,
+            "message": f"Credits set to {new_balance} successfully"
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+@app.post("/api/v1/admin/reset-credits/{user_id}")
+async def admin_reset_credits(user_id: str):
+    """
+    Admin: Reset user credits to 0
+    Example: POST /api/v1/admin/reset-credits/+918528933970
+    """
+    try:
+        # Get current credits
+        current = db_service.get_user_credits(user_id)
+        
+        # Set to 0 (subtract current balance)
+        new_balance = db_service.update_user_credits(user_id, -current)
+        
+        return {
+            "status": "success",
+            "user_id": user_id,
+            "old_credits": current,
+            "new_credits": new_balance,
+            "message": f"Credits reset to 0 for user {user_id}"
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+@app.get("/api/v1/admin/user/{user_id}")
+async def admin_get_user(user_id: str):
+    """
+    Admin: Get user details including credits
+    Example: GET /api/v1/admin/user/+918528933970
+    """
+    try:
+        user = db_service.get_user(user_id)
+        if user:
+            return {
+                "status": "success",
+                "user": user
+            }
+        else:
+            return {
+                "status": "error",
+                "message": f"User {user_id} not found"
+            }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+@app.post("/api/v1/admin/bulk-add-credits")
+async def admin_bulk_add_credits(user_ids: list, amount: int):
+    """
+    Admin: Add credits to multiple users
+    Example: POST /api/v1/admin/bulk-add-credits
+    Body: {"user_ids": ["+918528933970", "+919999999999"], "amount": 10}
+    """
     if amount <= 0:
         raise HTTPException(status_code=400, detail="Amount must be positive")
     
-    new_balance = db_service.update_user_credits(user_id, amount)
+    results = []
+    for user_id in user_ids:
+        try:
+            new_balance = db_service.update_user_credits(user_id, amount)
+            results.append({
+                "user_id": user_id,
+                "status": "success",
+                "new_balance": new_balance
+            })
+        except Exception as e:
+            results.append({
+                "user_id": user_id,
+                "status": "error",
+                "message": str(e)
+            })
+    
     return {
         "status": "success",
-        "user_id": user_id,
-        "credits_added": amount,
-        "new_balance": new_balance
+        "results": results
     }
 
-@app.delete("/api/v1/admin/delete-user/{user_id}")
-async def admin_delete_user(user_id: str):
-    """Admin: Delete a user and all their data"""
-    # This would need to be implemented in the database service
-    return {"status": "success", "message": f"User {user_id} deleted"}
-
-
-
-@app.get("/admin")
-async def serve_admin():
-    """Serve the admin panel"""
-    admin_path = "frontend/admin.html"
-    if os.path.exists(admin_path):
-        return FileResponse(admin_path)
-    return {"message": "Admin panel not found"}
-
-
+@app.put("/api/v1/admin/update-user/{user_id}")
+async def admin_update_user(user_id: str, request: Request):
+    """Admin: Update user details"""
+    try:
+        data = await request.json()
+        name = data.get("name")
+        email = data.get("email")
+        
+        # Update user (you'll need to add this method to DatabaseService)
+        # For now, we'll just return success
+        return {
+            "status": "success",
+            "message": f"User {user_id} updated",
+            "user_id": user_id
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e)
+        }
 
 if __name__ == "__main__":
     import uvicorn

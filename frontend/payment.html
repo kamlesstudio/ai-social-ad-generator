@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Buy Credits - AI Ad Generator</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0f;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 24px;
+            padding: 40px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        }
+        h1 {
+            text-align: center;
+            font-size: 32px;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #6c3bf7, #00c6ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .subtitle {
+            text-align: center;
+            color: rgba(255,255,255,0.4);
+            margin-bottom: 30px;
+        }
+        .credit-balance {
+            text-align: center;
+            padding: 15px;
+            background: rgba(108,59,247,0.1);
+            border-radius: 12px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(108,59,247,0.2);
+        }
+        .credit-balance span {
+            font-size: 28px;
+            font-weight: 700;
+            color: #a78bfa;
+        }
+        .packages {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .package {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .package:hover {
+            border-color: rgba(108,59,247,0.3);
+            background: rgba(108,59,247,0.05);
+        }
+        .package.selected {
+            border-color: #6c3bf7;
+            background: rgba(108,59,247,0.1);
+            box-shadow: 0 0 30px rgba(108,59,247,0.1);
+        }
+        .package-info h3 {
+            font-size: 18px;
+            margin-bottom: 4px;
+        }
+        .package-info p {
+            color: rgba(255,255,255,0.4);
+            font-size: 14px;
+        }
+        .package-price {
+            font-size: 24px;
+            font-weight: 700;
+            color: #a78bfa;
+        }
+        .package-price small {
+            font-size: 14px;
+            font-weight: 400;
+            color: rgba(255,255,255,0.3);
+        }
+        .qr-section {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 16px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .qr-section.visible {
+            display: block;
+        }
+        .qr-section img {
+            max-width: 200px;
+            border-radius: 12px;
+            margin: 15px 0;
+        }
+        .qr-section .upi-id {
+            background: rgba(255,255,255,0.05);
+            padding: 12px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 18px;
+            color: #a78bfa;
+            margin: 10px 0;
+        }
+        .copy-btn {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #fff;
+            padding: 8px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: 0.3s;
+        }
+        .copy-btn:hover {
+            background: rgba(255,255,255,0.15);
+        }
+        .btn-pay {
+            width: 100%;
+            padding: 16px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #6c3bf7, #4f0bc7);
+            color: #fff;
+            font-weight: 700;
+            font-size: 18px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: none;
+        }
+        .btn-pay.visible {
+            display: block;
+        }
+        .btn-pay:hover {
+            transform: scale(1.01);
+            box-shadow: 0 0 40px rgba(108,59,247,0.3);
+        }
+        .btn-pay:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: rgba(255,255,255,0.3);
+            text-decoration: none;
+            transition: 0.3s;
+        }
+        .back-link:hover {
+            color: rgba(255,255,255,0.6);
+        }
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            padding: 16px 28px;
+            border-radius: 14px;
+            background: rgba(20,20,30,0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.08);
+            color: #fff;
+            font-size: 14px;
+            max-width: 400px;
+            z-index: 999;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: none;
+        }
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .toast.success { border-left: 4px solid #4CAF50; }
+        .toast.error { border-left: 4px solid #f44336; }
+        .toast.info { border-left: 4px solid #2196F3; }
+        .payment-status {
+            padding: 12px;
+            border-radius: 8px;
+            margin: 10px 0;
+            display: none;
+        }
+        .payment-status.visible {
+            display: block;
+        }
+        .payment-status.success {
+            background: rgba(76,175,80,0.15);
+            color: #4CAF50;
+            border: 1px solid rgba(76,175,80,0.2);
+        }
+        .payment-status.pending {
+            background: rgba(255,193,7,0.15);
+            color: #FFC107;
+            border: 1px solid rgba(255,193,7,0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💰 Buy Credits</h1>
+        <p class="subtitle">Get more credits to generate AI videos</p>
+
+        <div class="credit-balance">
+            Current Balance: <span id="currentCredits">0</span> credits
+        </div>
+
+        <div class="packages" id="packages">
+            <div class="package" data-credits="5" data-price="200" onclick="selectPackage(this)">
+                <div class="package-info">
+                    <h3>🌟 Starter</h3>
+                    <p>5 credits</p>
+                </div>
+                <div class="package-price">₹200</div>
+            </div>
+            <div class="package" data-credits="10" data-price="400" onclick="selectPackage(this)">
+                <div class="package-info">
+                    <h3>🔥 Popular</h3>
+                    <p>10 credits</p>
+                </div>
+                <div class="package-price">₹400</div>
+            </div>
+            <div class="package" data-credits="25" data-price="600" onclick="selectPackage(this)">
+                <div class="package-info">
+                    <h3>🚀 Pro</h3>
+                    <p>25 credits</p>
+                </div>
+                <div class="package-price">₹600</div>
+            </div>
+        </div>
+
+        <!-- QR Code Section -->
+        <div id="qrSection" class="qr-section">
+            <h3>📱 Scan to Pay</h3>
+            <img id="qrCode" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=your-upi-id@upi&pn=AI%20Ad%20Generator&cu=INR" alt="QR Code" />
+            <p style="color: rgba(255,255,255,0.4); font-size: 14px; margin: 5px 0;">or pay using UPI ID</p>
+            <div class="upi-id" id="upiId">your-upi-id@upi</div>
+            <button class="copy-btn" onclick="copyUPI()">📋 Copy UPI ID</button>
+            
+            <div id="paymentStatus" class="payment-status"></div>
+            
+            <p style="color: rgba(255,255,255,0.3); font-size: 13px; margin-top: 15px;">
+                ⚠️ After payment, click "I Have Paid" and enter the UTR number
+            </p>
+        </div>
+
+        <button id="payBtn" class="btn-pay" onclick="processPayment()">
+            💳 Pay Now
+        </button>
+
+        <a href="/app" class="back-link">← Back to Ad Generator</a>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api/v1';
+        let selectedPackage = null;
+
+        // Get current credits
+        async function fetchCredits() {
+            const user = JSON.parse(localStorage.getItem('user') || 'null');
+            const phone = localStorage.getItem('user_phone');
+            const userId = user?.phone || phone;
+            
+            if (!userId) return;
+            
+            try {
+                const res = await fetch(`${API_BASE}/credits/balance`, {
+                    headers: { 'X-User-ID': userId }
+                });
+                const data = await res.json();
+                document.getElementById('currentCredits').textContent = data.balance || 0;
+                return data.balance;
+            } catch (e) {
+                console.error('Error fetching credits:', e);
+            }
+        }
+
+        function selectPackage(el) {
+            document.querySelectorAll('.package').forEach(p => p.classList.remove('selected'));
+            el.classList.add('selected');
+            
+            selectedPackage = {
+                credits: parseInt(el.dataset.credits),
+                price: parseInt(el.dataset.price)
+            };
+            
+            document.getElementById('qrSection').classList.add('visible');
+            document.getElementById('payBtn').classList.add('visible');
+            document.getElementById('payBtn').disabled = false;
+            
+            // Update QR code with amount
+            const upiData = `upi://pay?pa=your-upi-id@upi&pn=AI%20Ad%20Generator&am=${selectedPackage.price}&cu=INR`;
+            document.getElementById('qrCode').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiData)}`;
+        }
+
+        function copyUPI() {
+            const upiId = document.getElementById('upiId').textContent;
+            navigator.clipboard.writeText(upiId);
+            showToast('✅ UPI ID copied!', 'success');
+        }
+
+        async function processPayment() {
+            if (!selectedPackage) {
+                showToast('Please select a package first', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('payBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Please complete payment...';
+
+            const statusDiv = document.getElementById('paymentStatus');
+            statusDiv.className = 'payment-status pending visible';
+            statusDiv.innerHTML = `
+                <strong>⏳ Payment Pending</strong><br>
+                Please scan the QR code or use UPI ID to pay ₹${selectedPackage.price}
+            `;
+
+            showToast('💳 Please complete the payment using QR code or UPI', 'info');
+
+            // Simulate payment verification (in production, this would be a callback)
+            // For now, we'll show a manual verification option
+            btn.textContent = '✅ I Have Paid';
+            btn.disabled = false;
+            
+            // Add click handler for manual verification
+            btn.onclick = async function() {
+                const utr = prompt('Enter the UTR number from your payment:');
+                if (!utr) {
+                    showToast('Please enter the UTR number to verify payment', 'error');
+                    return;
+                }
+                
+                await verifyPayment(utr);
+            };
+        }
+
+        async function verifyPayment(utr) {
+            const user = JSON.parse(localStorage.getItem('user') || 'null');
+            const phone = localStorage.getItem('user_phone');
+            const userId = user?.phone || phone;
+            
+            const btn = document.getElementById('payBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Verifying...';
+
+            try {
+                const response = await fetch(`${API_BASE}/verify-payment`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-User-ID': userId
+                    },
+                    body: JSON.stringify({
+                        credits: selectedPackage.credits,
+                        amount: selectedPackage.price,
+                        utr: utr
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('paymentStatus').className = 'payment-status success visible';
+                    document.getElementById('paymentStatus').innerHTML = `
+                        <strong>✅ Payment Successful!</strong><br>
+                        ${selectedPackage.credits} credits added to your account!
+                    `;
+                    showToast(`✅ ${selectedPackage.credits} credits added!`, 'success');
+                    await fetchCredits();
+                    
+                    // Reset
+                    setTimeout(() => {
+                        window.location.href = '/app';
+                    }, 3000);
+                } else {
+                    document.getElementById('paymentStatus').className = 'payment-status error visible';
+                    document.getElementById('paymentStatus').innerHTML = `
+                        <strong>❌ Payment Verification Failed</strong><br>
+                        ${data.detail || 'Please try again or contact support'}
+                    `;
+                    showToast('❌ Payment verification failed', 'error');
+                }
+            } catch (e) {
+                showToast('❌ Error verifying payment', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '💳 Pay Now';
+            }
+        }
+
+        function showToast(message, type) {
+            const t = document.getElementById('toast');
+            t.textContent = message;
+            t.className = `toast ${type} show`;
+            clearTimeout(t._hide);
+            t._hide = setTimeout(() => t.classList.remove('show'), 4000);
+        }
+
+        // Init
+        fetchCredits();
+
+        // Check if user is logged in
+        if (!localStorage.getItem('user_phone') && !localStorage.getItem('access_token')) {
+            showToast('🔐 Please login first', 'error');
+            setTimeout(() => {
+                window.location.href = '/login';
+            }, 2000);
+        }
+    </script>
+</body>
+</html>

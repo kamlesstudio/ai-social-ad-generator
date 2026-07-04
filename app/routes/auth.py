@@ -1,5 +1,5 @@
 """
-Authentication Routes
+Authentication Routes - Fixed to use Database
 """
 
 from fastapi import APIRouter, HTTPException, status, Depends
@@ -13,7 +13,8 @@ router = APIRouter(prefix="/api/v1/auth", tags=["Authentication"])
 security = HTTPBearer()
 
 # Import from services
-from app.services.auth_service import auth_service, otp_storage, user_storage
+from app.services.auth_service import auth_service, otp_storage
+from app.models.database import db_service  # ✅ Add database service
 
 # Models
 from pydantic import BaseModel
@@ -75,15 +76,19 @@ async def verify_otp(request: OTPVerifyRequest):
             detail="Invalid or expired OTP"
         )
     
-    user_data = user_storage.get(request.phone)
+    # ✅ Use DATABASE instead of in-memory storage
+    user_data = db_service.get_user(request.phone)
+    
     if not user_data:
-        user_data = {
-            "phone": request.phone,
+        # Create user in database with 0 credits
+        user_data = db_service.create_user(request.phone, {
             "name": request.phone,
-            "created_at": datetime.now().isoformat(),
-            "credits": 10
-        }
-        user_storage[request.phone] = user_data
+            "credits": 0  # Start with 0 credits
+        })
+
+        credits = db_service.check_and_give_welcome_credits(request.phone)
+        user_data["credits"] = credits
+        logger.info(f"📝 New user created: {request.phone} with 0 credits")
     
     token_data = {
         "sub": request.phone,
@@ -95,11 +100,7 @@ async def verify_otp(request: OTPVerifyRequest):
     return TokenResponse(
         access_token=access_token,
         token_type="bearer",
-        user={
-            "phone": request.phone,
-            "name": user_data.get("name", request.phone),
-            "credits": user_data.get("credits", 0)
-        }
+        user=user_data
     )
 
 @router.get("/test-otp/{phone}")

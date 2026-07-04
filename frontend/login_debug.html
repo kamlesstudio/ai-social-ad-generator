@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login - AI Ad Generator (Debug)</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            max-width: 500px; 
+            margin: 50px auto; 
+            padding: 20px; 
+            background: #f5f5f5; 
+        }
+        .container { 
+            background: white; 
+            padding: 30px; 
+            border-radius: 12px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+        }
+        h1 { margin-top: 0; color: #333; text-align: center; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; }
+        input { 
+            width: 100%; 
+            padding: 10px; 
+            border: 1px solid #ddd; 
+            border-radius: 6px; 
+            font-size: 16px; 
+        }
+        button { 
+            background: #4CAF50; 
+            color: white; 
+            padding: 12px 20px; 
+            border: none; 
+            border-radius: 6px; 
+            font-size: 16px; 
+            cursor: pointer; 
+            width: 100%; 
+        }
+        button:hover { background: #45a049; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .hidden { display: none; }
+        .message { 
+            padding: 10px; 
+            border-radius: 6px; 
+            margin-top: 10px; 
+        }
+        .success { background: #e8f5e9; color: #2e7d32; }
+        .error { background: #ffebee; color: #c62828; }
+        .info { background: #e3f2fd; color: #0d47a1; }
+        .otp-section { margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; }
+        .timer { color: #666; font-size: 14px; margin-top: 5px; }
+        .user-info { 
+            background: #e3f2fd; 
+            padding: 15px; 
+            border-radius: 8px; 
+            margin: 10px 0; 
+        }
+        .demo-note {
+            background: #fff3e0;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-size: 14px;
+            border-left: 4px solid #ff9800;
+        }
+        .nav-link {
+            display: inline-block;
+            margin-top: 10px;
+            color: #2196F3;
+            text-decoration: none;
+        }
+        .nav-link:hover { text-decoration: underline; }
+        .debug-panel {
+            background: #1a1a2e;
+            color: #00ff88;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin-top: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+        }
+        .debug-panel.show {
+            display: block;
+        }
+        .debug-btn {
+            background: #333;
+            color: #fff;
+            border: none;
+            padding: 5px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+        .debug-btn:hover {
+            background: #555;
+        }
+        .storage-status {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+            font-size: 14px;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 AI Ad Generator (Debug)</h1>
+        
+        <div class="demo-note">
+            📱 <strong>Debug Mode:</strong> Shows localStorage status after login.
+        </div>
+        
+        <!-- Storage Status -->
+        <div class="storage-status" id="storageStatus">
+            🔍 Checking localStorage...
+        </div>
+        
+        <!-- Phone Input -->
+        <div id="phoneSection">
+            <div class="form-group">
+                <label>Phone Number</label>
+                <input type="tel" id="phoneInput" placeholder="+919876543210" value="+91">
+            </div>
+            <button id="sendOtpBtn" onclick="sendOTP()">📤 Send OTP</button>
+        </div>
+
+        <!-- OTP Verification -->
+        <div id="otpSection" class="otp-section hidden">
+            <div class="form-group">
+                <label>Enter OTP</label>
+                <input type="text" id="otpInput" placeholder="6-digit OTP" maxlength="6">
+            </div>
+            <button id="verifyOtpBtn" onclick="verifyOTP()">✅ Verify OTP</button>
+            <div class="timer" id="timer"></div>
+        </div>
+
+        <!-- User Info -->
+        <div id="userSection" class="hidden">
+            <div class="user-info" id="userInfo"></div>
+            <button onclick="logout()" style="background: #f44336;">🚪 Logout</button>
+            <hr>
+            <a href="/app" class="nav-link" onclick="checkStorageBeforeRedirect()">🎬 Go to Ad Generator →</a>
+        </div>
+
+        <!-- Messages -->
+        <div id="message" class="hidden message"></div>
+        
+        <!-- Debug Panel -->
+        <button class="debug-btn" onclick="toggleDebug()">🐛 Toggle Debug</button>
+        <div id="debugPanel" class="debug-panel">
+            <div id="debugContent"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000/api/v1/auth';
+        let timerInterval = null;
+        let phoneNumber = '';
+
+        function toggleDebug() {
+            const panel = document.getElementById('debugPanel');
+            panel.classList.toggle('show');
+        }
+
+        function debugLog(message) {
+            console.log('🔍 DEBUG:', message);
+            const content = document.getElementById('debugContent');
+            content.innerHTML += `<div>${new Date().toLocaleTimeString()}: ${message}</div>`;
+            content.scrollTop = content.scrollHeight;
+        }
+
+        function updateStorageStatus() {
+            const user = localStorage.getItem('user');
+            const phone = localStorage.getItem('user_phone');
+            const token = localStorage.getItem('access_token');
+            
+            const status = document.getElementById('storageStatus');
+            status.innerHTML = `
+                📱 user: ${user ? '✅ SET' : '❌ NOT SET'}<br>
+                📱 user_phone: ${phone ? '✅ SET' : '❌ NOT SET'}<br>
+                🔑 access_token: ${token ? '✅ SET' : '❌ NOT SET'}<br>
+                ${user ? `<div style="margin-top:5px;font-size:12px;color:#666;">📋 Raw: ${user.substring(0, 50)}...</div>` : ''}
+            `;
+        }
+
+        function checkStorageBeforeRedirect() {
+            updateStorageStatus();
+            const user = localStorage.getItem('user');
+            const phone = localStorage.getItem('user_phone');
+            
+            if (!user || !phone) {
+                alert('⚠️ User data not found in localStorage! Please login again.');
+                return false;
+            }
+            return true;
+        }
+
+        function showMessage(text, type) {
+            const msg = document.getElementById('message');
+            msg.textContent = text;
+            msg.className = `message ${type}`;
+            msg.classList.remove('hidden');
+        }
+
+        function hideMessage() {
+            document.getElementById('message').classList.add('hidden');
+        }
+
+        async function sendOTP() {
+            const phone = document.getElementById('phoneInput').value.trim();
+            if (!phone || phone.length < 10) {
+                showMessage('Please enter a valid phone number', 'error');
+                return;
+            }
+
+            phoneNumber = phone;
+            hideMessage();
+            
+            const btn = document.getElementById('sendOtpBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Sending...';
+
+            try {
+                const response = await fetch(`${API_URL}/send-otp`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showMessage('✅ OTP sent! Check the console.', 'success');
+                    document.getElementById('phoneSection').classList.add('hidden');
+                    document.getElementById('otpSection').classList.remove('hidden');
+                    startTimer(300);
+                    
+                    setTimeout(async () => {
+                        try {
+                            const testResp = await fetch(`${API_URL}/test-otp/${encodeURIComponent(phone)}`);
+                            const testData = await testResp.json();
+                            if (testData.otp) {
+                                console.log('📱 OTP:', testData.otp);
+                                document.getElementById('otpInput').value = testData.otp;
+                                showMessage('🔑 OTP auto-filled!', 'info');
+                            }
+                        } catch(e) {}
+                    }, 2000);
+                    
+                } else {
+                    showMessage('❌ ' + (data.detail || 'Failed to send OTP'), 'error');
+                }
+            } catch (error) {
+                showMessage('❌ Error: ' + error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '📤 Send OTP';
+            }
+        }
+
+        async function verifyOTP() {
+            debugLog('🔑 Starting OTP verification...');
+            
+            const otp = document.getElementById('otpInput').value.trim();
+            debugLog(`📱 OTP entered: ${otp}`);
+            
+            if (!otp || otp.length !== 6) {
+                showMessage('Please enter a valid 6-digit OTP', 'error');
+                debugLog('❌ Invalid OTP format');
+                return;
+            }
+
+            debugLog(`📱 Phone: ${phoneNumber}`);
+            hideMessage();
+            
+            const btn = document.getElementById('verifyOtpBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Verifying...';
+
+            try {
+                debugLog('📡 Sending verification request...');
+                const response = await fetch(`${API_URL}/verify-otp`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone: phoneNumber, otp })
+                });
+
+                debugLog(`📊 Response status: ${response.status}`);
+                const data = await response.json();
+                debugLog(`📦 Response data: ${JSON.stringify(data)}`);
+                
+                if (response.ok) {
+                    debugLog('✅ Login successful!');
+                    showMessage('✅ Login successful! Welcome! 🎉', 'success');
+                    
+                    // ✅ STORE USER DATA PROPERLY
+                    debugLog('💾 Storing user data in localStorage...');
+                    localStorage.setItem('access_token', data.access_token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    localStorage.setItem('user_phone', data.user.phone);
+                    
+                    debugLog(`📱 Stored user_phone: ${localStorage.getItem('user_phone')}`);
+                    debugLog(`📱 Stored user: ${localStorage.getItem('user')}`);
+                    
+                    // Verify storage
+                    const storedUser = localStorage.getItem('user');
+                    const storedPhone = localStorage.getItem('user_phone');
+                    debugLog(`✅ Verification - user: ${storedUser}`);
+                    debugLog(`✅ Verification - phone: ${storedPhone}`);
+                    
+                    // Update storage status
+                    updateStorageStatus();
+                    
+                    document.getElementById('otpSection').classList.add('hidden');
+                    document.getElementById('userSection').classList.remove('hidden');
+                    document.getElementById('userInfo').innerHTML = `
+                        <strong>👤 ${data.user.name || data.user.phone}</strong><br>
+                        📱 ${data.user.phone}<br>
+                        💰 Credits: <strong>${data.user.credits || 0}</strong>
+                    `;
+                    
+                    if (timerInterval) {
+                        clearInterval(timerInterval);
+                    }
+                    
+                    debugLog('✅ Data stored successfully! Click "Go to Ad Generator" to continue.');
+                    
+                } else {
+                    debugLog(`❌ Login failed: ${data.detail || 'Invalid OTP'}`);
+                    showMessage('❌ ' + (data.detail || 'Invalid OTP'), 'error');
+                }
+            } catch (error) {
+                debugLog(`❌ Error: ${error.message}`);
+                showMessage('❌ Error: ' + error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '✅ Verify OTP';
+            }
+        }
+
+        function startTimer(seconds) {
+            const timerEl = document.getElementById('timer');
+            let remaining = seconds;
+            
+            if (timerInterval) clearInterval(timerInterval);
+            
+            timerInterval = setInterval(() => {
+                const mins = Math.floor(remaining / 60);
+                const secs = remaining % 60;
+                timerEl.textContent = `⏱️ ${mins}:${secs.toString().padStart(2, '0')} remaining`;
+                remaining--;
+                
+                if (remaining < 0) {
+                    clearInterval(timerInterval);
+                    timerEl.textContent = '⏱️ OTP expired. Request a new one.';
+                    document.getElementById('verifyOtpBtn').disabled = true;
+                }
+            }, 1000);
+        }
+
+        function logout() {
+            debugLog('🚪 Logging out...');
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('user');
+            localStorage.removeItem('user_phone');
+            debugLog('🧹 localStorage cleared');
+            document.getElementById('userSection').classList.add('hidden');
+            document.getElementById('phoneSection').classList.remove('hidden');
+            document.getElementById('otpSection').classList.add('hidden');
+            document.getElementById('phoneInput').value = '+91';
+            document.getElementById('otpInput').value = '';
+            updateStorageStatus();
+            showMessage('Logged out successfully', 'success');
+            if (timerInterval) clearInterval(timerInterval);
+        }
+
+        // Check storage on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            debugLog('📄 Page loaded');
+            updateStorageStatus();
+            
+            const token = localStorage.getItem('access_token');
+            const user = JSON.parse(localStorage.getItem('user') || 'null');
+            const phone = localStorage.getItem('user_phone');
+            
+            debugLog(`🔍 Token: ${token ? '✅ exists' : '❌ missing'}`);
+            debugLog(`🔍 User: ${user ? JSON.stringify(user) : '❌ missing'}`);
+            debugLog(`🔍 Phone: ${phone || '❌ missing'}`);
+            
+            if (token && (user || phone)) {
+                debugLog('✅ User already logged in');
+                document.getElementById('phoneSection').classList.add('hidden');
+                document.getElementById('userSection').classList.remove('hidden');
+                const userData = user || { phone: phone, name: phone };
+                document.getElementById('userInfo').innerHTML = `
+                    <strong>👤 ${userData.name || userData.phone}</strong><br>
+                    📱 ${userData.phone}<br>
+                    💰 Credits: ${userData.credits || 0}
+                `;
+            } else {
+                debugLog('🔒 No user logged in');
+            }
+        });
+    </script>
+</body>
+</html>

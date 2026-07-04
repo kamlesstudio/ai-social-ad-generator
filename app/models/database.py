@@ -41,6 +41,7 @@ class User(Base):
     email = Column(String(255), nullable=True)
     credits = Column(Integer, default=10)
     total_videos = Column(Integer, default=0)
+    first_login = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
@@ -266,6 +267,26 @@ class DatabaseService:
             session.commit()
             session.refresh(video)
             return video.to_dict()
+        except Exception as e:
+            session.rollback()
+            raise e
+        finally:
+            session.close()
+
+
+    def check_and_give_welcome_credits(self, user_id: str) -> int:
+        """Give 3 welcome credits for first login"""
+        session = self.get_session()
+        try:
+            user = session.query(User).filter(User.id == user_id).first()
+            if user and user.first_login:
+                user.credits = (user.credits or 0) + 3
+                user.first_login = False
+                session.commit()
+                session.refresh(user)
+                logger.info(f"🎉 Welcome credits (3) given to user {user_id}")
+                return user.credits
+            return user.credits if user else 0
         except Exception as e:
             session.rollback()
             raise e

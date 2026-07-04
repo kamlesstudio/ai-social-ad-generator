@@ -473,6 +473,7 @@
 <div id="toast" class="toast"></div>
 
 <!-- ===== HEADER ===== -->
+<!-- ===== HEADER ===== -->
 <header class="glass-header">
     <div class="logo">
         <span class="logo-icon">🎬</span>
@@ -481,6 +482,23 @@
     <div class="nav-actions">
         <span class="credits-badge">💰 <span id="headerCredits">0</span> credits</span>
         <span id="userDisplay" style="color: rgba(255,255,255,0.6); font-size: 14px;"></span>
+        
+        <!-- 🔥 BUY CREDITS BUTTON -->
+        <a href="/payment" id="buyCreditsBtn" style="
+            padding: 8px 18px;
+            border-radius: 30px;
+            background: linear-gradient(135deg, #f7971e, #ffd200);
+            color: #1a1a2e;
+            font-weight: 700;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s;
+            display: none;
+            box-shadow: 0 0 20px rgba(247, 151, 30, 0.3);
+        ">💰 Buy Credits</a>
+        
         <a href="/login" class="btn-login" id="loginBtn">🔐 Login</a>
         <button class="btn-logout" id="logoutBtn" style="display:none;" onclick="logout()">🚪 Logout</button>
     </div>
@@ -592,12 +610,12 @@
     function getUserId() {
         const user = JSON.parse(localStorage.getItem('user') || 'null');
         if (user && user.phone) {
-            console.log('👤 Using user from localStorage:', user.phone);
+            console.log('👤 Using authenticated user:', user.phone);
             return user.phone;
         }
-        // Fallback for testing
-        console.log('👤 Using fallback user: +919999999999');
-        return '+919999999999';
+        // 🔥 No fallback, but NO auto-redirect
+        console.log('🔒 No user logged in');
+        return null;
     }
 
     // ===== DOM REFS =====
@@ -615,6 +633,8 @@
     const userDisplay = document.getElementById('userDisplay');
     const loginBtn = document.getElementById('loginBtn');
     const logoutBtn = document.getElementById('logoutBtn');
+    const generateForm = document.getElementById('generateForm');
+    const generatorSection = document.getElementById('generator');
 
     // ===== TOAST =====
     function showToast(message, type = 'info') {
@@ -625,20 +645,43 @@
         t._hide = setTimeout(() => t.classList.remove('show'), 4000);
     }
 
-    // ===== CREDITS - FIXED =====
+    // ===== CREDITS =====
+       
     async function fetchCredits() {
         try {
             const userId = getUserId();
+            console.log('🔍 Fetching credits for user:', userId);
+            
+            if (!userId) {
+                console.log('❌ No user ID found');
+                headerCredits.textContent = '🔒';
+                return 0;
+            }
+            
             const res = await fetch(`${API_BASE}/credits/balance`, {
                 headers: {
                     'X-User-ID': userId
                 }
             });
+            
+            console.log('📊 Credits API response status:', res.status);
+            
+            if (!res.ok) {
+                console.log('❌ Credits API failed:', res.status);
+                headerCredits.textContent = '🔒';
+                return 0;
+            }
+            
             const data = await res.json();
-            headerCredits.textContent = data.balance || 0;
-            return data.balance;
+            console.log('💰 Credits data:', data);
+            
+            const balance = data.balance || 0;
+            headerCredits.textContent = balance;
+            return balance;
+            
         } catch (e) {
-            console.warn('Credits fetch failed:', e);
+            console.warn('❌ Credits fetch error:', e);
+            headerCredits.textContent = '🔒';
             return 0;
         }
     }
@@ -647,14 +690,32 @@
     function updateUserUI() {
         const token = localStorage.getItem('access_token');
         const user = JSON.parse(localStorage.getItem('user') || 'null');
+        const phone = localStorage.getItem('user_phone');
+        const buyBtn = document.getElementById('buyCreditsBtn');
         if (token && user) {
             loginBtn.style.display = 'none';
             logoutBtn.style.display = 'inline-block';
             userDisplay.textContent = `👤 ${user.name || user.phone}`;
+            generateBtn.disabled = false;
+            generateBtn.title = '';
+            // 🔥 SHOW BUY CREDITS BUTTON
+        if (buyBtn) {
+            buyBtn.style.display = 'inline-block';
+            console.log('✅ Buy Credits button shown');
+        }
+        console.log('✅ User is logged in');
+
         } else {
             loginBtn.style.display = 'inline-block';
             logoutBtn.style.display = 'none';
             userDisplay.textContent = '';
+            // 🔥 Show login required message on the button
+            generateBtn.disabled = true;
+            generateBtn.title = 'Please login to generate videos';
+            if (buyBtn) {
+            buyBtn.style.display = 'none';
+        }
+        console.log('🔒 User is not logged in');
         }
     }
 
@@ -662,12 +723,20 @@
         localStorage.removeItem('access_token');
         localStorage.removeItem('user');
         updateUserUI();
+        fetchCredits();
         showToast('Logged out successfully', 'success');
     }
 
-    // ===== GENERATE VIDEO - FIXED =====
+    // ===== GENERATE VIDEO =====
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
+
+        const userId = getUserId();
+        if (!userId) {
+            showToast('🔐 Please login to generate videos', 'error');
+            // 🔥 Don't auto-redirect, just show message
+            return;
+        }
 
         const platform = document.getElementById('platform').value;
         const productName = document.getElementById('productName').value.trim();
@@ -695,7 +764,6 @@
         progressText.textContent = '⏳ Initializing AI...';
 
         try {
-            const userId = getUserId();
             console.log('📤 Sending request for user:', userId);
             
             const res = await fetch(`${API_BASE}/generate`, {
@@ -725,20 +793,25 @@
             generateBtn.disabled = false;
             generateBtn.innerHTML = '<span>🚀</span> Generate AI Video';
             fetchCredits();
+            updateUserUI();
         }
     });
 
-    // ===== POLL STATUS - FIXED =====
+    // ===== POLL STATUS =====
     async function pollStatus(taskId) {
         let attempts = 0;
-        const maxAttempts = 120; // 120 * 3 seconds = 6 minutes max
+        const maxAttempts = 120;
         
-        // Show initial progress
         progressText.textContent = '⏳ Starting generation...';
         
         while (attempts < maxAttempts) {
             try {
                 const userId = getUserId();
+                if (!userId) {
+                    showToast('🔐 Please login to check status', 'error');
+                    return;
+                }
+                
                 const res = await fetch(`${API_BASE}/status/${taskId}`, {
                     headers: {
                         'X-User-ID': userId
@@ -746,7 +819,6 @@
                 });
                 
                 if (!res.ok) {
-                    console.warn('Status check failed:', res.status);
                     attempts++;
                     await sleep(3000);
                     continue;
@@ -757,11 +829,9 @@
                 const status = data.status || 'pending';
                 const message = data.message || '';
                 
-                // Update progress bar
                 progressFill.style.width = `${progress}%`;
                 progressPercent.textContent = `${progress}%`;
                 
-                // Update status text
                 if (message) {
                     progressText.textContent = message;
                 } else {
@@ -774,10 +844,8 @@
                     progressText.textContent = statusMessages[status] || `⏳ Status: ${status}`;
                 }
                 
-                // Log progress
                 console.log(`📊 Task ${taskId}: ${progress}% - ${status}`);
                 
-                // Check completion
                 if (status === 'completed') {
                     progressFill.style.width = '100%';
                     progressPercent.textContent = '100%';
@@ -791,7 +859,7 @@
                 }
                 
                 attempts++;
-                await sleep(3000); // Check every 3 seconds
+                await sleep(3000);
                 
             } catch (e) {
                 console.warn('Poll error:', e);
@@ -800,7 +868,6 @@
             }
         }
         
-        // Timeout
         progressText.textContent = '⏱️ Timeout. Please check status manually.';
         showToast('⏱️ Generation took too long', 'error');
     }
@@ -848,11 +915,11 @@
                 'https://storage.googleapis.com/ai-ad-videos-kamlesh-2026/generated/veo_1783027848.mp4',
                 'https://storage.googleapis.com/ai-ad-videos-kamlesh-2026/generated/veo_1783059910.mp4',
                 'https://storage.googleapis.com/ai-ad-videos-kamlesh-2026/generated/veo_1783063283.mp4',
-                 'https://storage.googleapis.com/ai-ad-videos-kamlesh-2026/superbike_outputs/1783084633/2338348380925848298/sample_0.mp4',
-                 'https://storage.googleapis.com/ai-ad-videos-kamlesh-2026/superbike_outputs/1783084711/16357028676305151989/sample_0.mp4',
-                 ' https://storage.googleapis.com/ai-ad-videos-kamlesh-2026/superbike_outputs/1783084883/16394938948809900248/sample_0.mp4',
-                 'https://storage.googleapis.com/ai-ad-videos-kamlesh-2026/superbike_outputs/1783084984/4482940677311913254/sample_0.mp4',
-                 'https://storage.googleapis.com/ai-ad-videos-kamlesh-2026/veo_ga_outputs/1783083645/5591500133460136241/sample_0.mp4'
+                'https://storage.googleapis.com/ai-ad-videos-kamlesh-2026/superbike_outputs/1783084633/2338348380925848298/sample_0.mp4',
+                'https://storage.googleapis.com/ai-ad-videos-kamlesh-2026/superbike_outputs/1783084711/16357028676305151989/sample_0.mp4',
+                'https://storage.googleapis.com/ai-ad-videos-kamlesh-2026/superbike_outputs/1783084883/16394938948809900248/sample_0.mp4',
+                'https://storage.googleapis.com/ai-ad-videos-kamlesh-2026/superbike_outputs/1783084984/4482940677311913254/sample_0.mp4',
+                'https://storage.googleapis.com/ai-ad-videos-kamlesh-2026/veo_ga_outputs/1783083645/5591500133460136241/sample_0.mp4'
             ];
 
             videoGrid.innerHTML = '';
@@ -882,12 +949,28 @@
     }
 
     // ===== INIT =====
-    fetchCredits();
-    updateUserUI();
-    loadShowcase();
+    document.addEventListener('DOMContentLoaded', function() {
+        const token = localStorage.getItem('access_token');
+        const user = JSON.parse(localStorage.getItem('user') || 'null');
+        
+        if (token && user) {
+            fetchCredits();
+        } else {
+            // 🔥 Show message but don't redirect
+            headerCredits.textContent = '🔒';
+            showToast('🔐 Login to generate videos', 'info');
+        }
+        
+        updateUserUI();
+        loadShowcase();
+    });
 
     // Auto-refresh credits every 30s
-    setInterval(fetchCredits, 30000);
+    setInterval(() => {
+        if (localStorage.getItem('access_token')) {
+            fetchCredits();
+        }
+    }, 30000);
 </script>
 </body>
 </html>

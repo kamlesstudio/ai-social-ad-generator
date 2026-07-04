@@ -155,24 +155,21 @@ class DatabaseService:
     
     # === User CRUD ===
     def create_user(self, user_id: str, user_data: dict) -> dict:
-        """Create or update user"""
         session = self.get_session()
         try:
             user = session.query(User).filter(User.id == user_id).first()
             if user:
-                # Update existing user
                 user.name = user_data.get("name", user.name)
                 user.email = user_data.get("email", user.email)
             else:
-                # Create new user
                 user = User(
                     id=user_id,
                     name=user_data.get("name", user_id),
                     email=user_data.get("email", ""),
-                    credits=user_data.get("credits", 10)
+                    credits=user_data.get("credits", 10),
+                    total_videos=0  # ✅ Set default
                 )
                 session.add(user)
-            
             session.commit()
             session.refresh(user)
             return user.to_dict()
@@ -249,21 +246,20 @@ class DatabaseService:
     
     # === Video CRUD ===
     def save_video(self, user_id: str, video_data: dict) -> dict:
-        """Save a video record"""
         session = self.get_session()
         try:
-            # Check if user exists
             user = session.query(User).filter(User.id == user_id).first()
             if not user:
                 raise ValueError(f"User {user_id} not found")
             
-            # Generate video ID if not provided
-            video_id = video_data.get("id", f"vid_{int(datetime.now().timestamp())}")
+            # ✅ Handle NULL total_videos
+            if user.total_videos is None:
+                user.total_videos = 0
             
-            # Check if video already exists
+            video_id = video_data.get("id", f"vid_{int(datetime.now().timestamp())}")
             video = session.query(Video).filter(Video.id == video_id).first()
+            
             if video:
-                # Update existing video
                 video.video_url = video_data.get("video_url", video.video_url)
                 video.platform = video_data.get("platform", video.platform)
                 video.product_name = video_data.get("product_name", video.product_name)
@@ -274,7 +270,6 @@ class DatabaseService:
                 video.error_message = video_data.get("error_message", None)
                 video.progress = video_data.get("progress", 0)
             else:
-                # Create new video
                 video = Video(
                     id=video_id,
                     user_id=user_id,
@@ -290,7 +285,6 @@ class DatabaseService:
                     progress=video_data.get("progress", 0)
                 )
                 session.add(video)
-                # Update user's total videos
                 user.total_videos += 1
             
             session.commit()

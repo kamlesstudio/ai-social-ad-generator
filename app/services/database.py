@@ -9,7 +9,8 @@ from sqlalchemy.sql import func
 from datetime import datetime
 import os
 from dotenv import load_dotenv
-
+import logging
+logger = logging.getLogger(__name__)
 load_dotenv()
 
 Base = declarative_base()
@@ -209,18 +210,30 @@ class DatabaseService:
             session.close()
     
     def update_user_credits(self, user_id: str, amount: int) -> int:
-        """Update user credits (can be negative)"""
+        """
+        Update user credits (can be negative)
+        Handles NULL values gracefully
+        """
         session = self.get_session()
         try:
             user = session.query(User).filter(User.id == user_id).first()
             if user:
+                # ✅ Handle NULL values
+                if user.credits is None:
+                    user.credits = 0
+                    logger.info(f"💰 Initialized NULL credits to 0 for user {user_id}")
+                
                 user.credits += amount
                 session.commit()
                 session.refresh(user)
+                logger.info(f"💰 User {user_id} credits updated: {user.credits}")
                 return user.credits
-            return 0
+            else:
+                logger.error(f"❌ User {user_id} not found")
+                return 0
         except Exception as e:
             session.rollback()
+            logger.error(f"❌ Failed to update credits: {e}")
             raise e
         finally:
             session.close()

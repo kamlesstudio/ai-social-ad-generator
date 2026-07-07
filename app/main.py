@@ -948,6 +948,244 @@ async def admin_update_user(user_id: str, request: Request):
             "status": "error",
             "message": str(e)
         }
+    
+
+
+# Add at the top of main.py
+from app.services.gemini_service import GeminiService
+
+# Initialize Gemini service
+try:
+    gemini_service = GeminiService()
+    logger.info("✅ Gemini Service initialized")
+except Exception as e:
+    logger.warning(f"⚠️ Gemini Service not available: {e}")
+    gemini_service = None
+
+# === AI Text Assistant Endpoints ===
+
+
+@app.get("/ai-assistant")
+async def serve_ai_assistant():
+    """Serve the AI Assistant page"""
+    assistant_path = "frontend/ai-assistant.html"
+    if os.path.exists(assistant_path):
+        return FileResponse(assistant_path)
+    else:
+        # Simple fallback if file doesn't exist
+        return """
+        <html>
+            <head><title>AI Assistant</title></head>
+            <body style="font-family: Arial; padding: 40px; background: #0a0a0f; color: #fff; text-align: center;">
+                <h1>🤖 AI Assistant</h1>
+                <p>Please create <code>frontend/ai-assistant.html</code></p>
+                <a href="/app" style="color: #6c3bf7;">← Back to App</a>
+            </body>
+        </html>
+        """
+
+
+@app.post("/api/v1/ai/chat")
+async def chat_with_ai(request: Request):
+    """
+    Chat with AI assistant (like ChatGPT)
+    """
+    try:
+        data = await request.json()
+        prompt = data.get("prompt")
+        context = data.get("context", "")
+        
+        if not prompt:
+            raise HTTPException(status_code=400, detail="Prompt is required")
+        
+        if not gemini_service:
+            raise HTTPException(status_code=503, detail="AI service unavailable")
+        
+        response = gemini_service.generate_text(prompt, context)
+        
+        return {
+            "status": "success",
+            "response": response,
+            "prompt": prompt
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Chat error: {e}")
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+@app.post("/api/v1/ai/product-description")
+async def generate_product_description(request: Request):
+    """
+    Generate a product description for ads
+    """
+    try:
+        data = await request.json()
+        product_name = data.get("product_name")
+        features = data.get("features", "")
+        
+        if not product_name:
+            raise HTTPException(status_code=400, detail="Product name is required")
+        
+        if not gemini_service:
+            raise HTTPException(status_code=503, detail="AI service unavailable")
+        
+        description = gemini_service.generate_product_description(product_name, features)
+        
+        return {
+            "status": "success",
+            "product_name": product_name,
+            "description": description
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Product description error: {e}")
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+@app.post("/api/v1/ai/ad-script")
+async def generate_ad_script(request: Request):
+    """
+    Generate an ad script for video generation
+    """
+    try:
+        data = await request.json()
+        product_name = data.get("product_name")
+        platform = data.get("platform", "tiktok")
+        
+        if not product_name:
+            raise HTTPException(status_code=400, detail="Product name is required")
+        
+        if not gemini_service:
+            raise HTTPException(status_code=503, detail="AI service unavailable")
+        
+        script = gemini_service.generate_ad_script(product_name, platform)
+        
+        return {
+            "status": "success",
+            "product_name": product_name,
+            "platform": platform,
+            "script": script
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Ad script error: {e}")
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+    
+
+# === Video Feedback & Enhancement Endpoints ===
+
+@app.post("/api/v1/video/feedback")
+async def submit_video_feedback(request: Request):
+    """
+    Submit feedback for a generated video
+    """
+    try:
+        data = await request.json()
+        user_id = get_user_id(request)
+        task_id = data.get("task_id")
+        rating = data.get("rating")  # 1-5 stars
+        feedback = data.get("feedback")
+        improvements = data.get("improvements", [])
+        
+        if not task_id or not rating:
+            raise HTTPException(status_code=400, detail="Task ID and rating are required")
+        
+        # Store feedback in database
+        feedback_data = {
+            "task_id": task_id,
+            "user_id": user_id,
+            "rating": rating,
+            "feedback": feedback,
+            "improvements": improvements,
+            "created_at": datetime.now().isoformat()
+        }
+        
+        # You can store this in a feedback table or collection
+        # For now, we'll store it in a separate dictionary or database
+        # feedback_storage[task_id] = feedback_data
+        
+        return {
+            "status": "success",
+            "message": "Feedback submitted successfully",
+            "data": feedback_data
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Feedback error: {e}")
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+@app.post("/api/v1/video/enhance")
+async def enhance_video(request: Request):
+    """
+    Enhance video with AI suggestions
+    """
+    try:
+        data = await request.json()
+        user_id = get_user_id(request)
+        task_id = data.get("task_id")
+        enhancement_requests = data.get("requests", [])
+        
+        if not task_id:
+            raise HTTPException(status_code=400, detail="Task ID is required")
+        
+        # Get the original video data
+        video = db_service.get_video(user_id, task_id)
+        if not video:
+            raise HTTPException(status_code=404, detail="Video not found")
+        
+        # Generate enhancement suggestions using Gemini
+        gemini_service = GeminiService()
+        
+        enhancement_prompt = f"""
+        Video: {video.get('product_name')} - {video.get('product_description')}
+        User wants: {', '.join(enhancement_requests) if enhancement_requests else 'Suggest improvements'}
+
+        Generate specific, actionable enhancement suggestions for this video ad including:
+        1. Visual effects (transitions, overlays, text animations)
+        2. Audio improvements (music, sound effects)
+        3. Pacing and timing adjustments
+        4. Style and color grading suggestions
+        5. Content improvements (better hooks, CTAs)
+
+        Be specific and practical. Format as bullet points.
+        """
+        
+        suggestions = gemini_service.generate_text(enhancement_prompt)
+        
+        return {
+            "status": "success",
+            "task_id": task_id,
+            "suggestions": suggestions,
+            "enhancement_requests": enhancement_requests
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Enhancement error: {e}")
+        return {
+            "status": "error",
+            "message": str(e)
+        }
 
 if __name__ == "__main__":
     import uvicorn

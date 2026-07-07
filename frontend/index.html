@@ -135,6 +135,226 @@
         }
         .btn-logout:hover { background: rgba(255, 50, 50, 0.2); border-color: rgba(255, 50, 50, 0.3); }
 
+        /* ===== FLOATING AI ASSISTANT BUTTON ===== */
+        .floating-ai-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 999;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6c3bf7, #00c6ff);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: #fff;
+            box-shadow: 0 4px 20px rgba(108, 59, 247, 0.4);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            animation: pulse-glow 3s ease-in-out infinite;
+        }
+        .floating-ai-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 40px rgba(108, 59, 247, 0.6);
+        }
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 4px 20px rgba(108, 59, 247, 0.4); }
+            50% { box-shadow: 0 4px 40px rgba(108, 59, 247, 0.7); }
+        }
+        .floating-ai-btn .badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: #00c6ff;
+            color: #fff;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 10px;
+            min-width: 20px;
+            text-align: center;
+            animation: bounce 2s ease-in-out infinite;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+        }
+
+        /* ===== FLOATING CHAT WIDGET ===== */
+        .chat-widget {
+            position: fixed;
+            bottom: 100px;
+            right: 30px;
+            width: 380px;
+            max-width: calc(100vw - 40px);
+            max-height: 500px;
+            background: rgba(20, 20, 30, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            transform: scale(0.9) translateY(20px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .chat-widget.active {
+            display: flex;
+            transform: scale(1) translateY(0);
+            opacity: 1;
+        }
+        .chat-widget-header {
+            padding: 14px 18px;
+            background: linear-gradient(135deg, #6c3bf7, #4f0bc7);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .chat-widget-header .title {
+            font-weight: 600;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .chat-widget-header .close-btn {
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.6);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 0 4px;
+            transition: 0.3s;
+        }
+        .chat-widget-header .close-btn:hover {
+            color: #fff;
+            transform: rotate(90deg);
+        }
+        .chat-messages {
+            padding: 14px 16px;
+            overflow-y: auto;
+            flex: 1;
+            max-height: 320px;
+            min-height: 200px;
+        }
+        .chat-messages .msg {
+            margin: 6px 0;
+            padding: 10px 14px;
+            border-radius: 12px;
+            max-width: 85%;
+            font-size: 13px;
+            line-height: 1.6;
+            word-wrap: break-word;
+        }
+        .chat-messages .msg-user {
+            background: rgba(108,59,247,0.2);
+            border: 1px solid rgba(108,59,247,0.15);
+            margin-left: auto;
+            text-align: right;
+        }
+        .chat-messages .msg-ai {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .chat-messages .msg-ai .bullet {
+            display: block;
+            padding: 2px 0 2px 8px;
+            border-left: 2px solid rgba(108,59,247,0.3);
+            margin: 2px 0;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .chat-messages .msg-ai .section-title {
+            color: #a78bfa;
+            font-weight: 600;
+            font-size: 14px;
+            display: block;
+            margin: 6px 0 3px 0;
+        }
+        .chat-widget-input {
+            display: flex;
+            gap: 8px;
+            padding: 12px 14px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            flex-shrink: 0;
+        }
+        .chat-widget-input input {
+            flex: 1;
+            padding: 10px 14px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.04);
+            color: #fff;
+            font-size: 13px;
+            transition: border-color 0.3s;
+        }
+        .chat-widget-input input:focus {
+            outline: none;
+            border-color: #6c3bf7;
+        }
+        .chat-widget-input input::placeholder {
+            color: rgba(255,255,255,0.3);
+        }
+        .chat-widget-input button {
+            padding: 10px 18px;
+            border-radius: 20px;
+            border: none;
+            background: linear-gradient(135deg, #6c3bf7, #4f0bc7);
+            color: #fff;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: 0.3s;
+            white-space: nowrap;
+        }
+        .chat-widget-input button:hover:not(:disabled) {
+            transform: scale(1.02);
+        }
+        .chat-widget-input button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .chat-typing {
+            color: rgba(255,255,255,0.3);
+            font-style: italic;
+            padding: 8px 14px;
+            font-size: 12px;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        .chat-widget .quick-actions {
+            display: flex;
+            gap: 6px;
+            padding: 8px 14px;
+            flex-wrap: wrap;
+            border-top: 1px solid rgba(255,255,255,0.03);
+        }
+        .chat-widget .quick-actions button {
+            padding: 4px 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.06);
+            background: rgba(255,255,255,0.03);
+            color: rgba(255,255,255,0.5);
+            cursor: pointer;
+            font-size: 11px;
+            transition: 0.3s;
+        }
+        .chat-widget .quick-actions button:hover {
+            background: rgba(108,59,247,0.15);
+            border-color: rgba(108,59,247,0.3);
+            color: #fff;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.8; }
+        }
+
         /* ===== HERO ===== */
         .hero {
             text-align: center;
@@ -216,8 +436,6 @@
             margin-bottom: 30px;
             font-size: 15px;
         }
-
-        /* ===== GENERATOR CARD ===== */
         .generator-card {
             background: rgba(255,255,255,0.03);
             border: 1px solid rgba(255,255,255,0.06);
@@ -285,7 +503,6 @@
         .btn-generate:hover:not(:disabled) { transform: scale(1.01); box-shadow: 0 0 50px rgba(108, 59, 247, 0.3); }
         .btn-generate:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        /* ===== PROGRESS ===== */
         .progress-container {
             margin-top: 20px;
             padding: 20px;
@@ -376,10 +593,17 @@
             max-height: 500px;
             border-radius: 12px;
             background: #000;
+            cursor: pointer;
+        }
+        .result-container .video-controls {
+            display: flex;
+            gap: 12px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+            align-items: center;
         }
         .result-container .download-btn {
             display: inline-block;
-            margin-top: 12px;
             padding: 10px 24px;
             border-radius: 30px;
             background: rgba(255,255,255,0.08);
@@ -390,6 +614,143 @@
             transition: 0.3s;
         }
         .result-container .download-btn:hover { background: rgba(255,255,255,0.15); }
+
+        /* ===== FEEDBACK SECTION ===== */
+        .feedback-section {
+            margin-top: 20px;
+            padding: 24px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.08);
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+        .feedback-section.visible { 
+            display: block;
+        }
+        .feedback-section h4 {
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 16px;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .star-rating {
+            display: flex;
+            gap: 8px;
+            cursor: pointer;
+            font-size: 36px;
+            margin-bottom: 12px;
+        }
+        .star-rating span {
+            transition: all 0.2s;
+            color: rgba(255,255,255,0.15);
+            user-select: none;
+            cursor: pointer;
+        }
+        .star-rating span:hover,
+        .star-rating span.active {
+            color: #f7971e;
+            transform: scale(1.2);
+        }
+        .rating-text {
+            color: rgba(255,255,255,0.4);
+            font-size: 14px;
+            margin-left: 10px;
+        }
+        .feedback-input-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        .feedback-input-row input {
+            flex: 1;
+            padding: 12px 16px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.05);
+            color: #fff;
+            font-size: 14px;
+            min-width: 200px;
+        }
+        .feedback-input-row input:focus {
+            outline: none;
+            border-color: #6c3bf7;
+        }
+        .feedback-input-row input::placeholder {
+            color: rgba(255,255,255,0.3);
+        }
+        .btn-feedback {
+            padding: 12px 28px;
+            border-radius: 10px;
+            border: none;
+            background: linear-gradient(135deg, #6c3bf7, #4f0bc7);
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+            white-space: nowrap;
+            transition: 0.3s;
+        }
+        .btn-feedback:hover:not(:disabled) {
+            transform: scale(1.02);
+            box-shadow: 0 0 20px rgba(108,59,247,0.3);
+        }
+        .btn-feedback:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .btn-enhance {
+            padding: 10px 20px;
+            border-radius: 20px;
+            border: 1px solid rgba(108,59,247,0.3);
+            background: rgba(108,59,247,0.1);
+            color: #a78bfa;
+            cursor: pointer;
+            font-size: 13px;
+            transition: 0.3s;
+            margin-top: 5px;
+        }
+        .btn-enhance:hover {
+            background: rgba(108,59,247,0.2);
+            transform: scale(1.02);
+        }
+        .enhancement-result {
+            margin-top: 12px;
+            padding: 16px 20px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.06);
+            display: none;
+            font-size: 13px;
+            line-height: 1.8;
+            color: rgba(255,255,255,0.8);
+            white-space: pre-wrap;
+        }
+        .enhancement-result.visible { display: block; }
+        .enhancement-result .title {
+            color: #a78bfa;
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        .enhancement-result .bullet {
+            display: block;
+            padding: 4px 0 4px 16px;
+            border-left: 2px solid rgba(108,59,247,0.3);
+            margin: 4px 0;
+        }
+        .feedback-success {
+            color: #4CAF50;
+            font-size: 14px;
+            margin-top: 10px;
+            display: none;
+        }
+        .feedback-success.visible { display: block; }
 
         /* ===== STATS BAR ===== */
         .stats-bar {
@@ -425,6 +786,9 @@
             .nav-actions { justify-content: center; }
             .generator-card { padding: 24px; }
             .hero { padding: 40px 16px 20px; }
+            .chat-widget { width: calc(100vw - 30px); bottom: 80px; right: 15px; max-height: 450px; }
+            .floating-ai-btn { bottom: 20px; right: 20px; width: 54px; height: 54px; font-size: 24px; }
+            .star-rating { font-size: 28px; }
         }
 
         /* ===== SCROLLBAR ===== */
@@ -436,23 +800,22 @@
         .toast {
             position: fixed;
             bottom: 30px;
-            right: 30px;
-            padding: 16px 28px;
-            border-radius: 14px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 24px;
+            border-radius: 12px;
             background: rgba(20, 20, 30, 0.95);
             backdrop-filter: blur(20px);
             border: 1px solid rgba(255,255,255,0.08);
             color: #fff;
             font-size: 14px;
-            max-width: 400px;
             z-index: 999;
-            transform: translateY(100px);
             opacity: 0;
             transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
             pointer-events: none;
+            max-width: 90%;
         }
         .toast.show {
-            transform: translateY(0);
             opacity: 1;
             pointer-events: auto;
         }
@@ -473,7 +836,6 @@
 <div id="toast" class="toast"></div>
 
 <!-- ===== HEADER ===== -->
-<!-- ===== HEADER ===== -->
 <header class="glass-header">
     <div class="logo">
         <span class="logo-icon">🎬</span>
@@ -482,23 +844,6 @@
     <div class="nav-actions">
         <span class="credits-badge">💰 <span id="headerCredits">0</span> credits</span>
         <span id="userDisplay" style="color: rgba(255,255,255,0.6); font-size: 14px;"></span>
-        
-        <!-- 🔥 BUY CREDITS BUTTON -->
-        <a href="/payment" id="buyCreditsBtn" style="
-            padding: 8px 18px;
-            border-radius: 30px;
-            background: linear-gradient(135deg, #f7971e, #ffd200);
-            color: #1a1a2e;
-            font-weight: 700;
-            font-size: 14px;
-            border: none;
-            cursor: pointer;
-            text-decoration: none;
-            transition: all 0.3s;
-            display: none;
-            box-shadow: 0 0 20px rgba(247, 151, 30, 0.3);
-        ">💰 Buy Credits</a>
-        
         <a href="/login" class="btn-login" id="loginBtn">🔐 Login</a>
         <button class="btn-logout" id="logoutBtn" style="display:none;" onclick="logout()">🚪 Logout</button>
     </div>
@@ -577,10 +922,49 @@
 
         <!-- Result -->
         <div id="resultContainer" class="result-container">
-            <video id="resultVideo" controls playsinline></video>
-            <div style="display:flex; gap:12px; margin-top:10px; flex-wrap:wrap;">
+            <video id="resultVideo" controls playsinline preload="metadata"></video>
+            <div class="video-controls">
+                <button class="download-btn" onclick="toggleVideoPlay()">▶️ Play/Pause</button>
                 <button class="download-btn" onclick="downloadVideo()">📥 Download Video</button>
                 <button class="download-btn" onclick="generateAgain()">🔄 Generate Another</button>
+            </div>
+            
+            <!-- ===== FEEDBACK SECTION ===== -->
+            <div id="feedbackSection" class="feedback-section">
+                <h4>💬 How was this video? <span style="font-size:13px; font-weight:400; color:rgba(255,255,255,0.3);">(Your feedback helps us improve)</span></h4>
+                
+                <!-- Rating -->
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap;">
+                    <span style="color: rgba(255,255,255,0.4); font-size: 14px; font-weight: 500;">Rate:</span>
+                    <div class="star-rating" id="starRating">
+                        <span data-star="1" onclick="setRating(1)">☆</span>
+                        <span data-star="2" onclick="setRating(2)">☆</span>
+                        <span data-star="3" onclick="setRating(3)">☆</span>
+                        <span data-star="4" onclick="setRating(4)">☆</span>
+                        <span data-star="5" onclick="setRating(5)">☆</span>
+                    </div>
+                    <span id="ratingText" class="rating-text">Click a star to rate</span>
+                </div>
+                
+                <!-- Feedback Input -->
+                <div class="feedback-input-row">
+                    <input id="feedbackInput" type="text" placeholder="What could be improved? (e.g., add music, faster cuts, better visuals...)" />
+                    <button class="btn-feedback" id="submitFeedbackBtn" onclick="submitFeedback()">📤 Send Feedback</button>
+                </div>
+                
+                <!-- Success Message -->
+                <div id="feedbackSuccess" class="feedback-success">
+                    ✅ Thank you! Your feedback has been submitted.
+                </div>
+                
+                <!-- Enhancement Section -->
+                <div id="enhancementSection" style="display: none; margin-top: 12px;">
+                    <button class="btn-enhance" onclick="getEnhancements()">✨ Get AI Enhancement Suggestions</button>
+                    <div id="enhancementResult" class="enhancement-result">
+                        <div class="title">✨ Enhancement Suggestions</div>
+                        <div id="enhancementContent"></div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -591,7 +975,6 @@
     <h2 class="section-title">🎥 Sample Videos</h2>
     <p class="section-sub">Check out these examples generated with AI</p>
     <div class="video-grid" id="videoGrid">
-        <!-- Will be populated by JavaScript -->
         <div style="text-align:center; padding:40px; color:rgba(255,255,255,0.3); grid-column:1/-1;">Loading sample videos...</div>
     </div>
 </section>
@@ -601,22 +984,54 @@
     <p>Built with ❤️ • AI Ad Generator v3.0 • Powered by Veo 3</p>
 </footer>
 
+<!-- ===== FLOATING AI ASSISTANT ===== -->
+<button class="floating-ai-btn" id="floatingAiBtn" onclick="toggleChat()" title="AI Assistant">
+    🤖
+    <span class="badge">AI</span>
+</button>
+
+<!-- ===== CHAT WIDGET ===== -->
+<div class="chat-widget" id="chatWidget">
+    <div class="chat-widget-header">
+        <span class="title">🤖 AI Ad Assistant</span>
+        <button class="close-btn" onclick="toggleChat()">✕</button>
+    </div>
+    <div class="chat-messages" id="chatMessages">
+        <div class="msg msg-ai">
+            👋 Hi! I'm your AI Ad Assistant.<br>
+            Ask me about product descriptions, ad scripts, or marketing ideas!
+        </div>
+    </div>
+    <div class="quick-actions">
+        <button onclick="sendQuickMsg('Write a product description for a smartwatch')">📝 Description</button>
+        <button onclick="sendQuickMsg('Create a TikTok ad script for headphones')">🎬 Ad Script</button>
+        <button onclick="sendQuickMsg('Suggest product features for a fitness tracker')">💡 Features</button>
+    </div>
+    <div class="chat-widget-input">
+        <input type="text" id="chatInput" placeholder="Ask me anything..." onkeypress="if(event.key==='Enter') sendChatMessage()" />
+        <button onclick="sendChatMessage()" id="chatSendBtn">Send</button>
+    </div>
+</div>
+
 <script>
     // ===== CONFIG =====
-    // const API_BASE = 'http://localhost:8000/api/v1';
-    //const AUTH_BASE = 'http://localhost:8000/api/v1/auth'; 
     const API_BASE = '/api/v1';
     const AUTH_BASE = '/api/v1/auth';
+    const CHAT_API = '/api/v1/ai/chat';
+
+    // ===== GLOBAL STATE =====
+    let currentTaskId = null;
+    let selectedRating = 0;
+    let currentVideoTaskId = null;
+    let feedbackSubmitted = false;
+    let isVideoPlaying = false;
 
     // ===== GET USER ID =====
     function getUserId() {
         const user = JSON.parse(localStorage.getItem('user') || 'null');
         if (user && user.phone) {
-            console.log('👤 Using authenticated user:', user.phone);
             return user.phone;
         }
-        // 🔥 No fallback, but NO auto-redirect
-        console.log('🔒 No user logged in');
         return null;
     }
 
@@ -635,8 +1050,13 @@
     const userDisplay = document.getElementById('userDisplay');
     const loginBtn = document.getElementById('loginBtn');
     const logoutBtn = document.getElementById('logoutBtn');
-    const generateForm = document.getElementById('generateForm');
-    const generatorSection = document.getElementById('generator');
+    const feedbackSection = document.getElementById('feedbackSection');
+
+    // Chat refs
+    const chatWidget = document.getElementById('chatWidget');
+    const chatMessages = document.getElementById('chatMessages');
+    const chatInput = document.getElementById('chatInput');
+    const chatSendBtn = document.getElementById('chatSendBtn');
 
     // ===== TOAST =====
     function showToast(message, type = 'info') {
@@ -647,42 +1067,140 @@
         t._hide = setTimeout(() => t.classList.remove('show'), 4000);
     }
 
+    // ===== CHAT FUNCTIONS =====
+    function toggleChat() {
+        chatWidget.classList.toggle('active');
+        if (chatWidget.classList.contains('active')) {
+            chatInput.focus();
+        }
+    }
+
+    function addChatMessage(text, type) {
+        const div = document.createElement('div');
+        div.className = `msg msg-${type}`;
+        
+        if (type === 'ai') {
+            const lines = text.split('\n').filter(line => line.trim());
+            let html = '';
+            for (const line of lines) {
+                const clean = line.replace(/^[\*\-•]\s*/, '').trim();
+                if (clean.startsWith('##')) {
+                    html += `<span class="section-title">${clean.replace(/^##\s*/, '')}</span>`;
+                } else if (clean) {
+                    html += `<span class="bullet">${clean}</span>`;
+                }
+            }
+            div.innerHTML = html || text;
+        } else {
+            div.textContent = text;
+        }
+        
+        chatMessages.appendChild(div);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function addChatLoading() {
+        const div = document.createElement('div');
+        div.className = 'chat-typing';
+        div.id = 'chatTyping';
+        div.textContent = '🤔 Thinking...';
+        chatMessages.appendChild(div);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function removeChatLoading() {
+        const loading = document.getElementById('chatTyping');
+        if (loading) loading.remove();
+    }
+
+    async function sendChatMessage() {
+        const message = chatInput.value.trim();
+        if (!message) return;
+
+        const userId = getUserId();
+        if (!userId) {
+            showToast('🔐 Please login first', 'error');
+            return;
+        }
+
+        chatInput.value = '';
+        chatSendBtn.disabled = true;
+        chatSendBtn.textContent = '⏳';
+
+        addChatMessage(message, 'user');
+        addChatLoading();
+
+        try {
+            const response = await fetch(CHAT_API, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-User-ID': userId
+                },
+                body: JSON.stringify({ prompt: message })
+            });
+
+            const data = await response.json();
+            removeChatLoading();
+
+            if (data.status === 'success') {
+                addChatMessage(data.response, 'ai');
+            } else {
+                addChatMessage('❌ ' + (data.message || 'Something went wrong'), 'ai');
+            }
+
+        } catch (error) {
+            removeChatLoading();
+            addChatMessage('❌ Error: ' + error.message, 'ai');
+        } finally {
+            chatSendBtn.disabled = false;
+            chatSendBtn.textContent = 'Send';
+        }
+    }
+
+    function sendQuickMsg(message) {
+        chatInput.value = message;
+        sendChatMessage();
+    }
+
+    // ===== VIDEO CONTROLS =====
+    function toggleVideoPlay() {
+        if (resultVideo.paused) {
+            resultVideo.play();
+            isVideoPlaying = true;
+        } else {
+            resultVideo.pause();
+            isVideoPlaying = false;
+        }
+    }
+
+    // Click on video to toggle play
+    resultVideo.addEventListener('click', toggleVideoPlay);
+
     // ===== CREDITS =====
-       
     async function fetchCredits() {
         try {
             const userId = getUserId();
-            console.log('🔍 Fetching credits for user:', userId);
-            
             if (!userId) {
-                console.log('❌ No user ID found');
                 headerCredits.textContent = '🔒';
                 return 0;
             }
             
             const res = await fetch(`${API_BASE}/credits/balance`, {
-                headers: {
-                    'X-User-ID': userId
-                }
+                headers: { 'X-User-ID': userId }
             });
             
-            console.log('📊 Credits API response status:', res.status);
-            
             if (!res.ok) {
-                console.log('❌ Credits API failed:', res.status);
                 headerCredits.textContent = '🔒';
                 return 0;
             }
             
             const data = await res.json();
-            console.log('💰 Credits data:', data);
-            
-            const balance = data.balance || 0;
-            headerCredits.textContent = balance;
-            return balance;
+            headerCredits.textContent = data.balance || 0;
+            return data.balance;
             
         } catch (e) {
-            console.warn('❌ Credits fetch error:', e);
+            console.warn('Credits fetch failed:', e);
             headerCredits.textContent = '🔒';
             return 0;
         }
@@ -692,38 +1210,28 @@
     function updateUserUI() {
         const token = localStorage.getItem('access_token');
         const user = JSON.parse(localStorage.getItem('user') || 'null');
-        const phone = localStorage.getItem('user_phone');
-        const buyBtn = document.getElementById('buyCreditsBtn');
+        
         if (token && user) {
             loginBtn.style.display = 'none';
             logoutBtn.style.display = 'inline-block';
             userDisplay.textContent = `👤 ${user.name || user.phone}`;
             generateBtn.disabled = false;
             generateBtn.title = '';
-            // 🔥 SHOW BUY CREDITS BUTTON
-        if (buyBtn) {
-            buyBtn.style.display = 'inline-block';
-            console.log('✅ Buy Credits button shown');
-        }
-        console.log('✅ User is logged in');
-
         } else {
             loginBtn.style.display = 'inline-block';
             logoutBtn.style.display = 'none';
             userDisplay.textContent = '';
-            // 🔥 Show login required message on the button
             generateBtn.disabled = true;
             generateBtn.title = 'Please login to generate videos';
-            if (buyBtn) {
-            buyBtn.style.display = 'none';
-        }
-        console.log('🔒 User is not logged in');
         }
     }
 
     function logout() {
         localStorage.removeItem('access_token');
         localStorage.removeItem('user');
+        localStorage.removeItem('user_phone');
+        localStorage.removeItem('user_name');
+        localStorage.removeItem('user_credits');
         updateUserUI();
         fetchCredits();
         showToast('Logged out successfully', 'success');
@@ -736,7 +1244,6 @@
         const userId = getUserId();
         if (!userId) {
             showToast('🔐 Please login to generate videos', 'error');
-            // 🔥 Don't auto-redirect, just show message
             return;
         }
 
@@ -760,10 +1267,12 @@
         generateBtn.disabled = true;
         generateBtn.innerHTML = '<span>⏳</span> Starting...';
         resultContainer.classList.remove('visible');
+        feedbackSection.classList.remove('visible');
         progressContainer.style.display = 'block';
         progressFill.style.width = '0%';
         progressPercent.textContent = '0%';
         progressText.textContent = '⏳ Initializing AI...';
+        currentTaskId = null;
 
         try {
             console.log('📤 Sending request for user:', userId);
@@ -784,7 +1293,9 @@
 
             const data = await res.json();
             const taskId = data.task_id;
+            currentTaskId = taskId;
             taskIdDisplay.textContent = `Task ID: ${taskId}`;
+            console.log('✅ Task ID stored:', currentTaskId);
             showToast(`✅ Task ${taskId.slice(0,8)} started!`, 'success');
             await pollStatus(taskId);
 
@@ -815,9 +1326,7 @@
                 }
                 
                 const res = await fetch(`${API_BASE}/status/${taskId}`, {
-                    headers: {
-                        'X-User-ID': userId
-                    }
+                    headers: { 'X-User-ID': userId }
                 });
                 
                 if (!res.ok) {
@@ -876,15 +1385,218 @@
 
     function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
+    // ===== STAR RATING =====
+    function highlightStars(rating) {
+        const stars = document.querySelectorAll('#starRating span');
+        stars.forEach((star, index) => {
+            if (index < rating) {
+                star.textContent = '★';
+                star.style.color = '#f7971e';
+                star.classList.add('active');
+            } else {
+                star.textContent = '☆';
+                star.style.color = 'rgba(255,255,255,0.15)';
+                star.classList.remove('active');
+            }
+        });
+    }
+
+    function setRating(rating) {
+        selectedRating = rating;
+        highlightStars(rating);
+        const texts = ['', '😞 Needs improvement', '🤔 Needs work', '👌 Good', '👍 Great!', '🌟 Excellent!'];
+        document.getElementById('ratingText').textContent = texts[rating] || 'Click a star to rate';
+        
+        const btn = document.getElementById('submitFeedbackBtn');
+        if (rating > 0) {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+        }
+    }
+
+    // ===== FEEDBACK FUNCTIONS =====
+    function showFeedback(taskId) {
+        console.log('🎯 Showing feedback for task:', taskId);
+        currentVideoTaskId = taskId;
+        selectedRating = 0;
+        feedbackSubmitted = false;
+        
+        const section = document.getElementById('feedbackSection');
+        section.classList.add('visible');
+        section.style.display = 'block';
+        
+        document.getElementById('feedbackInput').value = '';
+        document.getElementById('enhancementSection').style.display = 'none';
+        document.getElementById('enhancementResult').classList.remove('visible');
+        document.getElementById('feedbackSuccess').classList.remove('visible');
+        
+        setRating(0);
+        
+        const btn = document.getElementById('submitFeedbackBtn');
+        btn.textContent = '📤 Send Feedback';
+        btn.disabled = true;
+        btn.style.opacity = '0.5';
+        btn.style.background = 'linear-gradient(135deg, #6c3bf7, #4f0bc7)';
+        
+        // Scroll to feedback section after a delay
+        setTimeout(() => {
+            section.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 500);
+    }
+
+    async function submitFeedback() {
+        if (!currentVideoTaskId) {
+            showToast('No video selected. Please generate a video first.', 'error');
+            return;
+        }
+        
+        if (selectedRating === 0) {
+            showToast('Please rate the video first by clicking a star ⭐', 'error');
+            return;
+        }
+        
+        const feedback = document.getElementById('feedbackInput').value.trim();
+        const btn = document.getElementById('submitFeedbackBtn');
+        btn.disabled = true;
+        btn.textContent = '⏳ Submitting...';
+        
+        try {
+            const response = await fetch('/api/v1/video/feedback', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-User-ID': getUserId()
+                },
+                body: JSON.stringify({
+                    task_id: currentVideoTaskId,
+                    rating: selectedRating,
+                    feedback: feedback || 'No additional feedback'
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                showToast('✅ Feedback submitted! Thank you! 🌟', 'success');
+                feedbackSubmitted = true;
+                
+                document.getElementById('feedbackSuccess').classList.add('visible');
+                document.getElementById('enhancementSection').style.display = 'block';
+                
+                btn.textContent = '✅ Feedback Sent';
+                btn.style.background = '#4CAF50';
+                btn.style.opacity = '1';
+                
+                // Auto-get enhancements if feedback is detailed or rating is low
+                if (feedback.length > 5 || selectedRating < 4) {
+                    setTimeout(() => getEnhancements(), 1000);
+                }
+            } else {
+                showToast('❌ Failed to submit feedback', 'error');
+                btn.textContent = '📤 Send Feedback';
+                btn.disabled = false;
+                btn.style.opacity = '1';
+            }
+        } catch (error) {
+            showToast('❌ Error: ' + error.message, 'error');
+            btn.textContent = '📤 Send Feedback';
+            btn.disabled = false;
+            btn.style.opacity = '1';
+        }
+    }
+
+    async function getEnhancements() {
+        if (!currentVideoTaskId) {
+            showToast('No video selected', 'error');
+            return;
+        }
+        
+        const resultDiv = document.getElementById('enhancementResult');
+        const contentDiv = document.getElementById('enhancementContent');
+        resultDiv.classList.add('visible');
+        contentDiv.textContent = '🤔 AI is thinking of improvements...';
+        contentDiv.style.color = 'rgba(255,255,255,0.5)';
+        
+        try {
+            const feedback = document.getElementById('feedbackInput').value.trim();
+            const requests = [];
+            if (feedback) requests.push(feedback);
+            if (selectedRating < 3) requests.push('Make it more engaging');
+            if (selectedRating < 2) requests.push('Improve visual quality');
+            
+            const response = await fetch('/api/v1/video/enhance', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-User-ID': getUserId()
+                },
+                body: JSON.stringify({
+                    task_id: currentVideoTaskId,
+                    requests: requests.length > 0 ? requests : ['Suggest general improvements']
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                const suggestions = data.suggestions || 'No specific suggestions available.';
+                const lines = suggestions.split('\n').filter(line => line.trim());
+                let html = '';
+                for (const line of lines) {
+                    const clean = line.replace(/^[\*\-•]\s*/, '').trim();
+                    if (clean) {
+                        html += `<span class="bullet">${clean}</span>`;
+                    }
+                }
+                contentDiv.innerHTML = html || suggestions;
+                contentDiv.style.color = 'rgba(255,255,255,0.8)';
+                showToast('✨ Enhancement suggestions ready!', 'success');
+            } else {
+                contentDiv.textContent = '❌ ' + (data.message || 'Could not get suggestions');
+                contentDiv.style.color = '#f44336';
+            }
+        } catch (error) {
+            contentDiv.textContent = '❌ Error: ' + error.message;
+            contentDiv.style.color = '#f44336';
+        }
+    }
+
     // ===== SHOW VIDEO =====
     function showVideo(url) {
+        console.log('📹 Showing video with URL:', url);
+        console.log('📌 Current task ID:', currentTaskId);
+        
         resultContainer.classList.add('visible');
         resultVideo.src = url;
         resultVideo.load();
-        resultVideo.play().catch(() => {});
+        
+        // Try to play automatically
+        setTimeout(() => {
+            resultVideo.play().catch(err => {
+                console.log('Autoplay prevented:', err);
+            });
+        }, 500);
+        
         showToast('🎬 Video ready!', 'success');
         fetchCredits();
         loadShowcase();
+        
+        // Show feedback section after video loads
+        const taskIdToUse = currentTaskId || taskIdDisplay.textContent.replace('Task ID: ', '').trim();
+        
+        if (taskIdToUse && taskIdToUse !== '') {
+            console.log('✅ Using task ID for feedback:', taskIdToUse);
+            setTimeout(() => {
+                showFeedback(taskIdToUse);
+            }, 1500);
+        } else {
+            console.warn('⚠️ No task ID available for feedback');
+            // Show feedback with a placeholder
+            setTimeout(() => {
+                const fallbackId = 'video_' + Date.now();
+                showFeedback(fallbackId);
+            }, 1500);
+        }
     }
 
     function downloadVideo() {
@@ -900,11 +1612,19 @@
     function generateAgain() {
         resultContainer.classList.remove('visible');
         resultVideo.src = '';
+        resultVideo.pause();
         document.getElementById('productName').value = '';
         document.getElementById('productDesc').value = '';
         progressContainer.style.display = 'none';
         progressFill.style.width = '0%';
         document.getElementById('productName').focus();
+        document.getElementById('feedbackSection').classList.remove('visible');
+        document.getElementById('feedbackSection').style.display = 'none';
+        document.getElementById('enhancementResult').classList.remove('visible');
+        document.getElementById('feedbackSuccess').classList.remove('visible');
+        document.getElementById('enhancementSection').style.display = 'none';
+        currentTaskId = null;
+        currentVideoTaskId = null;
         showToast('🔄 Ready for new video!', 'info');
     }
 
@@ -930,7 +1650,7 @@
                 const card = document.createElement('div');
                 card.className = 'video-card';
                 card.innerHTML = `
-                    <video src="${url}" muted playsinline></video>
+                    <video src="${url}" muted playsinline preload="metadata"></video>
                     <div class="video-card-info">
                         <h4>Sample ${i+1}</h4>
                         <p>AI Generated • 6s</p>
@@ -938,8 +1658,11 @@
                 `;
                 card.addEventListener('click', () => {
                     const vid = card.querySelector('video');
-                    vid.muted = false;
-                    vid.play().catch(() => {});
+                    if (vid.paused) {
+                        vid.play().catch(() => {});
+                    } else {
+                        vid.pause();
+                    }
                 });
                 card.querySelector('video').addEventListener('loadeddata', () => {
                     card.querySelector('video').play().catch(() => {});
@@ -959,21 +1682,21 @@
         if (token && user) {
             fetchCredits();
         } else {
-            // 🔥 Show message but don't redirect
             headerCredits.textContent = '🔒';
             showToast('🔐 Login to generate videos', 'info');
         }
         
         updateUserUI();
         loadShowcase();
+        
+        // Auto-refresh credits every 30s
+        setInterval(() => {
+            if (localStorage.getItem('access_token')) {
+                fetchCredits();
+            }
+        }, 30000);
     });
-
-    // Auto-refresh credits every 30s
-    setInterval(() => {
-        if (localStorage.getItem('access_token')) {
-            fetchCredits();
-        }
-    }, 30000);
 </script>
+
 </body>
 </html>

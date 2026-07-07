@@ -1628,6 +1628,7 @@
         showToast('🔄 Ready for new video!', 'info');
     }
 
+    
     // ===== SHOWCASE =====
     async function loadShowcase() {
         try {
@@ -1656,24 +1657,69 @@
                         <p>AI Generated • 6s</p>
                     </div>
                 `;
-                card.addEventListener('click', () => {
-                    const vid = card.querySelector('video');
-                    if (vid.paused) {
-                        vid.play().catch(() => {});
-                    } else {
-                        vid.pause();
+                
+                const video = card.querySelector('video');
+                let hoverTimeout = null;
+                let isPlaying = false;
+                
+                // Hover: Play on hover, pause on leave
+                card.addEventListener('mouseenter', () => {
+                    clearTimeout(hoverTimeout);
+                    hoverTimeout = setTimeout(() => {
+                        video.play().catch(() => {});
+                        isPlaying = true;
+                    }, 300); // Small delay to prevent accidental plays
+                });
+                
+                card.addEventListener('mouseleave', () => {
+                    clearTimeout(hoverTimeout);
+                    if (!video.paused) {
+                        video.pause();
+                        isPlaying = false;
                     }
                 });
-                card.querySelector('video').addEventListener('loadeddata', () => {
-                    card.querySelector('video').play().catch(() => {});
+                
+                // Click: Toggle play/pause with sound
+                card.addEventListener('click', () => {
+                    if (video.paused) {
+                        // Unmute and play on click
+                        video.muted = false;
+                        video.play().catch(() => {
+                            // If browser blocks autoplay with sound, show toast
+                            showToast('🔊 Click the volume icon to unmute', 'info');
+                        });
+                        isPlaying = true;
+                    } else {
+                        video.pause();
+                        isPlaying = false;
+                    }
                 });
+                
+                // Show controls on hover
+                card.addEventListener('mouseenter', () => {
+                    video.controls = true;
+                });
+                
+                card.addEventListener('mouseleave', () => {
+                    // Hide controls when not hovering (but keep them visible if playing)
+                    if (video.paused) {
+                        video.controls = false;
+                    }
+                });
+                
+                // Handle video end
+                video.addEventListener('ended', () => {
+                    isPlaying = false;
+                    video.controls = false;
+                    video.currentTime = 0;
+                });
+                
                 videoGrid.appendChild(card);
             });
         } catch (e) {
             videoGrid.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.3);">Could not load samples</div>`;
         }
     }
-
     // ===== INIT =====
     document.addEventListener('DOMContentLoaded', function() {
         const token = localStorage.getItem('access_token');

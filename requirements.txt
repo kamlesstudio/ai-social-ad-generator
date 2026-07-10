@@ -124,7 +124,7 @@ uritemplate==4.2.0
 urllib3==2.7.0
 uuid6==2024.7.10
 uvicorn==0.34.0
-watchfiles==1.2.0
+watchfiles
 websockets==14.2
 wrapt==1.17.3
 yarl==1.24.2

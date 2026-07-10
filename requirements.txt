@@ -51,7 +51,7 @@ h11==0.16.0
 httpcore==1.0.9
 httplib2==0.32.0
 httptools==0.8.0
-httpx>=0.28.1
+httpx==0.28.1
 idna==3.18
 ImageIO==2.37.3
 imageio-ffmpeg==0.6.0
@@ -124,7 +124,7 @@ uritemplate==4.2.0
 urllib3==2.7.0
 uuid6==2024.7.10
 uvicorn==0.34.0
-watchfiles
+watchfiles==1.2.0
 websockets==14.2
 wrapt==1.17.3
 yarl==1.24.2

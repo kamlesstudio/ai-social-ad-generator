@@ -3,12 +3,8 @@ FROM python:3.11-slim as builder
 
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies (for building Python packages)
 RUN apt-get update && apt-get install -y \
-    ffmpeg \
-    libsm6 \
-    libxext6 \
-    libxrender-dev \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
@@ -21,13 +17,14 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Copy dependencies from builder
+# ✅ Install FFmpeg directly in final stage (with all libraries)
+RUN apt-get update && apt-get install -y \
+    ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy Python packages from builder
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
-
-# Copy ffmpeg
-COPY --from=builder /usr/bin/ffmpeg /usr/bin/ffmpeg
-COPY --from=builder /usr/bin/ffprobe /usr/bin/ffprobe
 
 # Copy application
 COPY . .

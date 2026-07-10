@@ -122,7 +122,135 @@ If the user asks about code, programming, or technical development:
         except Exception as e:
             logger.error(f"❌ Text generation error: {e}")
             return f"Error: {str(e)}"
+        
+    def recommend_video_config(self, product_name: str, product_description: str = "", 
+                           generation_mode: str = "image", 
+                           has_first_frame: bool = False, 
+                           has_last_frame: bool = False) -> dict:
+        """
+        Generate video configuration recommendations based on product and images
+        
+        Args:
+            product_name: Name of the product
+            product_description: Product description (optional)
+            generation_mode: "image" or "first-last"
+            has_first_frame: Whether first frame image is provided
+            has_last_frame: Whether last frame image is provided
+        
+        Returns:
+            Dictionary with video configuration recommendations
+        """
+        
+        # Build a consumer-focused prompt
+        prompt = f"""
+    You are a professional video director and social media ad expert. 
+    Analyze the following product information and recommend video settings.
 
+    Product Name: {product_name or "Product"}
+    Product Description: {product_description or "No description provided"}
+
+    Generation Mode: {generation_mode.upper()}
+    Images Provided: 
+    - First Frame: {"Yes" if has_first_frame else "No"}
+    - Last Frame: {"Yes" if has_last_frame else "No"}
+
+    Based on this information, provide a complete video configuration that would make a compelling social media ad.
+
+    ## Your Recommendations:
+
+    1. Camera Movement: [Suggest what camera motion works best - dolly, pan, tilt, zoom, orbit, etc.]
+
+    2. Lighting: [Suggest lighting style - warm, cool, dramatic, soft, natural, studio, etc.]
+
+    3. Action/Motion: [Describe what should happen - product rotates, model uses product, smooth transition, etc.]
+
+    4. Audio/Music: [Suggest music style and sound effects]
+
+    5. Duration: [Choose 4, 6, or 8 seconds - explain why]
+
+    6. Visual Style: [Describe the aesthetic - cinematic, modern, minimal, luxury, energetic, etc.]
+
+    7. Complete Prompt: [Write a detailed, professional prompt that combines all elements]
+    Format: "[Action description]. [Camera movement]. [Lighting]. [Style]. [Product focus]."
+
+    Remember:
+    - This is for a SOCIAL MEDIA AD (TikTok/Instagram/YouTube)
+    - Keep it consumer-friendly and visually appealing
+    - Focus on what would catch a viewer's attention
+    - Make the prompt specific and actionable for AI video generation
+    - ONLY provide marketing/video content - NO code or technical advice
+    """
+        
+        # Generate the response
+        response = self.generate_text(prompt)
+        
+        # Parse the response into structured data
+        recommendations = self._parse_video_recommendations(response)
+        
+        return recommendations
+
+    def _parse_video_recommendations(self, response: str) -> dict:
+        """
+        Parse the AI response into structured recommendations
+        """
+        # Default values
+        recs = {
+            "camera_movement": "gentle slow pan",
+            "lighting": "natural soft lighting",
+            "action": "product rotates smoothly to show all angles",
+            "audio": "upbeat modern background music",
+            "duration_seconds": 6,
+            "style": "clean minimal product showcase",
+            "prompt_enhancement": "",
+            "mood": "professional and premium"
+        }
+        
+        try:
+            # Extract camera movement
+            import re
+            camera_match = re.search(r'Camera Movement:?\s*([^\n.]+[.\n])', response, re.IGNORECASE)
+            if camera_match:
+                recs["camera_movement"] = camera_match.group(1).strip()
+            
+            # Extract lighting
+            lighting_match = re.search(r'Lighting:?\s*([^\n.]+[.\n])', response, re.IGNORECASE)
+            if lighting_match:
+                recs["lighting"] = lighting_match.group(1).strip()
+            
+            # Extract action
+            action_match = re.search(r'Action/Motion:?\s*([^\n.]+[.\n])', response, re.IGNORECASE)
+            if action_match:
+                recs["action"] = action_match.group(1).strip()
+            
+            # Extract audio
+            audio_match = re.search(r'Audio/Music:?\s*([^\n.]+[.\n])', response, re.IGNORECASE)
+            if audio_match:
+                recs["audio"] = audio_match.group(1).strip()
+            
+            # Extract duration
+            duration_match = re.search(r'Duration:?\s*(\d+)\s*seconds?', response, re.IGNORECASE)
+            if duration_match:
+                recs["duration_seconds"] = int(duration_match.group(1))
+            
+            # Extract style
+            style_match = re.search(r'Visual Style:?\s*([^\n.]+[.\n])', response, re.IGNORECASE)
+            if style_match:
+                recs["style"] = style_match.group(1).strip()
+            
+            # Extract complete prompt
+            prompt_match = re.search(r'Complete Prompt:?\s*([^\n]+(?:\n[^\n]+)*)', response, re.IGNORECASE)
+            if prompt_match:
+                recs["prompt_enhancement"] = prompt_match.group(1).strip()
+            
+            # Extract mood (optional)
+            mood_match = re.search(r'Mood:?\s*([^\n.]+[.\n])', response, re.IGNORECASE)
+            if mood_match:
+                recs["mood"] = mood_match.group(1).strip()
+                
+        except Exception as e:
+            logger.error(f"Error parsing recommendations: {e}")
+        
+        return recs
     def _contains_code(self, text: str) -> bool:
         """
         Check if response contains code patterns

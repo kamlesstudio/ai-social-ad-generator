@@ -9,8 +9,6 @@ RUN apt-get update && apt-get install -y \
     libsm6 \
     libxext6 \
     libxrender-dev \
-    libgl1 \
-    libglib2.0-0 \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
@@ -23,14 +21,13 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install FFmpeg in final stage
-RUN apt-get update && apt-get install -y \
-    ffmpeg \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy Python packages from builder
+# Copy dependencies from builder
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
+
+# Copy ffmpeg
+COPY --from=builder /usr/bin/ffmpeg /usr/bin/ffmpeg
+COPY --from=builder /usr/bin/ffprobe /usr/bin/ffprobe
 
 # Copy application
 COPY . .

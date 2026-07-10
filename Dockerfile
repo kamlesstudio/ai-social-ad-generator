@@ -3,13 +3,13 @@ FROM python:3.11-slim as builder
 
 WORKDIR /app
 
-# Install system dependencies (FIXED)
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     ffmpeg \
     libsm6 \
     libxext6 \
     libxrender-dev \
-    libgl1 \          # ✅ Replaces libgl1-mesa-glx
+    libgl1 \
     libglib2.0-0 \
     gcc \
     && rm -rf /var/lib/apt/lists/*
@@ -23,7 +23,7 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install FFmpeg directly in final stage
+# Install FFmpeg in final stage
 RUN apt-get update && apt-get install -y \
     ffmpeg \
     && rm -rf /var/lib/apt/lists/*

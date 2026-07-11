@@ -1460,14 +1460,17 @@ async def combine_videos_gcs_compose(video_urls: list, chain_id: str) -> Optiona
 async def combine_scene_videos(user_id: str, chain_id: str, scene_results: list) -> Optional[str]:
     """
     Combine multiple scene videos using FFmpeg and upload to GCS
+    Uses public URLs instead of signed URLs (works with Compute Engine credentials)
     """
     try:
         video_urls = [s.get("video_url") for s in scene_results if s.get("video_url")]
         
         if not video_urls:
+            logger.error("❌ No video URLs found")
             return None
         
         if len(video_urls) == 1:
+            logger.info("📹 Only one scene, returning it directly")
             return video_urls[0]
         
         logger.info(f"📹 Combining {len(video_urls)} videos for user {user_id}...")
@@ -1477,44 +1480,62 @@ async def combine_scene_videos(user_id: str, chain_id: str, scene_results: list)
             
             # Download videos
             for i, url in enumerate(video_urls):
-                response = requests.get(url, timeout=60)
+                logger.info(f"⬇️ Downloading scene {i+1}")
+                response = http_requests.get(url, timeout=60)
                 if response.status_code == 200:
                     video_path = os.path.join(temp_dir, f"scene_{i+1}.mp4")
                     with open(video_path, 'wb') as f:
                         f.write(response.content)
                     video_paths.append(video_path)
+                    logger.info(f"✅ Downloaded scene {i+1} ({len(response.content)} bytes)")
                 else:
+                    logger.error(f"❌ Failed to download scene {i+1}")
                     return None
             
             if len(video_paths) < 2:
+                logger.warning("⚠️ Less than 2 videos downloaded")
                 return video_paths[0] if video_paths else None
             
             output_path = os.path.join(temp_dir, "combined.mp4")
             
-            # FFmpeg concat
+            # Try FFmpeg concat with copy (fast)
             list_path = os.path.join(temp_dir, "filelist.txt")
             with open(list_path, 'w') as f:
                 for path in video_paths:
                     f.write(f"file '{os.path.abspath(path)}'\n")
             
+            logger.info("🔄 Running FFmpeg concat...")
             cmd = ['ffmpeg', '-f', 'concat', '-safe', '0', '-i', list_path, '-c', 'copy', '-y', output_path]
-            result = subprocess.run(cmd, capture_output=True, text=True)
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
             
             if result.returncode != 0:
                 # Fallback: re-encode
+                logger.warning("⚠️ Fast concat failed, trying re-encode...")
                 cmd = ['ffmpeg', '-i', video_paths[0]]
                 for i in range(1, len(video_paths)):
                     cmd.extend(['-i', video_paths[i]])
                 cmd.extend([
                     '-filter_complex', f'concat=n={len(video_paths)}:v=1:a=1',
-                    '-c:v', 'libx264', '-c:a', 'aac', '-preset', 'fast', '-y', output_path
+                    '-c:v', 'libx264',
+                    '-c:a', 'aac',
+                    '-preset', 'fast',
+                    '-movflags', 'faststart',
+                    '-y', output_path
                 ])
-                result = subprocess.run(cmd, capture_output=True, text=True)
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
             
-            if result.returncode != 0 or not os.path.exists(output_path):
+            if result.returncode != 0:
+                logger.error(f"❌ FFmpeg error: {result.stderr}")
                 return None
             
+            if not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
+                logger.error("❌ Output file is empty or missing")
+                return None
+            
+            logger.info(f"✅ Combined video created: {output_path}")
+            
             # Upload to GCS
+            logger.info("☁️ Uploading combined video to GCS...")
             storage_client = storage.Client()
             bucket = storage_client.bucket("ai-ad-videos-kamlesh-2026")
             
@@ -1530,8 +1551,16 @@ async def combine_scene_videos(user_id: str, chain_id: str, scene_results: list)
             logger.info(f"✅ Combined video uploaded: {combined_url}")
             return combined_url
             
+    except subprocess.TimeoutExpired:
+        logger.error("❌ FFmpeg timed out")
+        return None
+    except FileNotFoundError:
+        logger.error("❌ FFmpeg not found. Please install FFmpeg.")
+        return None
     except Exception as e:
         logger.error(f"❌ Combine error: {e}")
+        import traceback
+        traceback.print_exc()
         return None
 
 

@@ -1457,64 +1457,33 @@ async def combine_videos_gcs_compose(video_urls: list, chain_id: str) -> Optiona
         return None
 
 
-
-async def combine_scene_videos(
-    user_id: str, 
-    chain_id: str, 
-    scene_results: list,
-    make_public: bool = False,
-    signed_url_expiry: int = 3600
-) -> Optional[str]:
+async def combine_scene_videos(user_id: str, chain_id: str, scene_results: list) -> Optional[str]:
     """
-    Combine multiple scene videos using FFmpeg with proper MP4 handling
-    
-    Features:
-    - Proper MP4 concatenation with moov atom handling
-    - Automatic detection of video formats
-    - Fallback to re-encoding if formats differ
-    - User-specific paths and signed URLs
-    
-    Args:
-        user_id: User ID for path isolation
-        chain_id: Chain ID for naming
-        scene_results: List of scene results with video_url
-        make_public: If True, make blob public
-        signed_url_expiry: Expiry time in seconds for signed URLs
-    
-    Returns:
-        URL of combined video, or None if failed
+    Combine multiple scene videos using FFmpeg and upload to GCS
     """
     try:
         video_urls = [s.get("video_url") for s in scene_results if s.get("video_url")]
         
         if not video_urls:
-            logger.error(f"❌ No video URLs found for user {user_id}")
             return None
         
         if len(video_urls) == 1:
-            logger.info(f"📹 Only one scene for user {user_id}, returning it directly")
             return video_urls[0]
         
-        logger.info(f"📹 Combining {len(video_urls)} videos for user {user_id} using FFmpeg...")
+        logger.info(f"📹 Combining {len(video_urls)} videos for user {user_id}...")
         
         with tempfile.TemporaryDirectory() as temp_dir:
             video_paths = []
             
-            # Download all videos with progress
+            # Download videos
             for i, url in enumerate(video_urls):
-                logger.info(f"⬇️ Downloading scene {i+1} for user {user_id}")
-                try:
-                    response = http_requests.get(url, timeout=60)
-                    response.raise_for_status()
-                    
+                response = requests.get(url, timeout=60)
+                if response.status_code == 200:
                     video_path = os.path.join(temp_dir, f"scene_{i+1}.mp4")
                     with open(video_path, 'wb') as f:
                         f.write(response.content)
                     video_paths.append(video_path)
-                    logger.info(f"✅ Downloaded scene {i+1} ({len(response.content)} bytes)")
-                    
-                except Exception as e:
-                    logger.error(f"❌ Failed to download scene {i+1}: {e}")
+                else:
                     return None
             
             if len(video_paths) < 2:
@@ -1522,136 +1491,47 @@ async def combine_scene_videos(
             
             output_path = os.path.join(temp_dir, "combined.mp4")
             
-            # ===== STEP 1: Check if all videos have same format =====
-            formats = []
-            for path in video_paths:
-                try:
-                    result = subprocess.run(
-                        ['ffprobe', '-v', 'error', '-show_entries', 'stream=codec_name,width,height,r_frame_rate', 
-                         '-of', 'json', path],
-                        capture_output=True, text=True, timeout=30
-                    )
-                    if result.returncode == 0:
-                        format_info = json.loads(result.stdout)
-                        formats.append(format_info)
-                    else:
-                        logger.warning(f"⚠️ Could not analyze {path}, assuming same format")
-                        formats.append(None)
-                except Exception as e:
-                    logger.warning(f"⚠️ FFprobe failed for {path}: {e}")
-                    formats.append(None)
-            
-            # Check if all formats are identical (simplified check)
-            all_same = True
-            if all(f is not None for f in formats):
-                first = formats[0]
-                for f in formats[1:]:
-                    if first.get('streams') and f.get('streams'):
-                        s1 = first['streams'][0]
-                        s2 = f['streams'][0]
-                        if (s1.get('codec_name') != s2.get('codec_name') or
-                            s1.get('width') != s2.get('width') or
-                            s1.get('height') != s2.get('height')):
-                            all_same = False
-                            break
-            
-            # ===== STEP 2: Combine using appropriate method =====
-            if all_same:
-                # Method 1: Fast concat with copy (no re-encoding)
-                logger.info("🔄 Using fast concat (copy codec)")
-                list_path = os.path.join(temp_dir, "filelist.txt")
-                with open(list_path, 'w') as f:
-                    for path in video_paths:
-                        # Use absolute path to avoid issues
-                        abs_path = os.path.abspath(path)
-                        f.write(f"file '{abs_path}'\n")
-                
-                cmd = [
-                    'ffmpeg',
-                    '-f', 'concat',
-                    '-safe', '0',
-                    '-i', list_path,
-                    '-c', 'copy',
-                    '-movflags', 'faststart',  # Moves moov atom to beginning for web streaming
-                    '-y',
-                    output_path
-                ]
-                logger.info(f"🔧 Running: {' '.join(cmd)}")
-                result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
-                
-                if result.returncode != 0:
-                    logger.warning(f"⚠️ Fast concat failed: {result.stderr}")
-                    all_same = False  # Fallback to re-encode
-            
-            if not all_same:
-                # Method 2: Re-encode with concat filter (compatible with different formats)
-                logger.info("🔄 Using re-encode concat (compatible with all formats)")
-                
-                # Build command for concat filter
-                cmd = ['ffmpeg']
+            # FFmpeg concat
+            list_path = os.path.join(temp_dir, "filelist.txt")
+            with open(list_path, 'w') as f:
                 for path in video_paths:
-                    cmd.extend(['-i', path])
-                
-                # Build filter complex
+                    f.write(f"file '{os.path.abspath(path)}'\n")
+            
+            cmd = ['ffmpeg', '-f', 'concat', '-safe', '0', '-i', list_path, '-c', 'copy', '-y', output_path]
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            
+            if result.returncode != 0:
+                # Fallback: re-encode
+                cmd = ['ffmpeg', '-i', video_paths[0]]
+                for i in range(1, len(video_paths)):
+                    cmd.extend(['-i', video_paths[i]])
                 cmd.extend([
                     '-filter_complex', f'concat=n={len(video_paths)}:v=1:a=1',
-                    '-c:v', 'libx264',
-                    '-c:a', 'aac',
-                    '-movflags', 'faststart',
-                    '-preset', 'fast',
-                    '-crf', '23',
-                    '-y',
-                    output_path
+                    '-c:v', 'libx264', '-c:a', 'aac', '-preset', 'fast', '-y', output_path
                 ])
-                logger.info(f"🔧 Running: {' '.join(cmd)}")
-                result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+                result = subprocess.run(cmd, capture_output=True, text=True)
             
-            # ===== STEP 3: Check if combined video was created =====
-            if result.returncode != 0:
-                logger.error(f"❌ FFmpeg error: {result.stderr}")
+            if result.returncode != 0 or not os.path.exists(output_path):
                 return None
             
-            if not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
-                logger.error("❌ Combined video file is empty or missing")
-                return None
-            
-            logger.info(f"✅ Combined video created: {output_path} ({os.path.getsize(output_path)} bytes)")
-            
-            # ===== STEP 4: Upload to GCS =====
-            logger.info(f"☁️ Uploading combined video to GCS for user {user_id}...")
-            
-            storage_client = storage.Client(project="ai-social-ad-generator")
+            # Upload to GCS
+            storage_client = storage.Client()
             bucket = storage_client.bucket("ai-ad-videos-kamlesh-2026")
             
             # User-specific path
             blob_name = f"users/{user_id}/chains/{chain_id}.mp4"
             blob = bucket.blob(blob_name)
-            
             blob.upload_from_filename(output_path)
             
-            # Generate URL
-            if make_public:
-                blob.make_public()
-                combined_url = blob.public_url
-                logger.info(f"✅ Combined video uploaded (public): {combined_url}")
-            else:
-                expires_in = timedelta(seconds=signed_url_expiry)
-                combined_url = blob.generate_signed_url(
-                    version="v4",
-                    expiration=expires_in,
-                    method="GET",
-                )
-                logger.info(f"✅ Combined video uploaded (signed URL, expires in {signed_url_expiry}s)")
+            # ✅ Make public (fix for Compute Engine credentials)
+            blob.make_public()
+            combined_url = blob.public_url
             
+            logger.info(f"✅ Combined video uploaded: {combined_url}")
             return combined_url
             
-    except subprocess.TimeoutExpired:
-        logger.error(f"❌ FFmpeg timed out for user {user_id}")
-        return None
     except Exception as e:
-        logger.error(f"❌ Failed to combine videos for user {user_id}: {e}")
-        import traceback
-        traceback.print_exc()
+        logger.error(f"❌ Combine error: {e}")
         return None
 
 

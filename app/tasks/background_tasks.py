@@ -6,6 +6,7 @@ Supports: Text-to-Video, Image-to-Video, First/Last Frame
 import logging
 import random
 import time
+from datetime import datetime
 from typing import Dict, Any, Optional
 from PIL import Image
 import os
@@ -67,23 +68,17 @@ def process_video_generation_db(
     try:
         # Step 1: Start processing (10%)
         logger.info(f"📊 Task {task_id}: Updating to 10% - Starting...")
-        db_service.update_video_status(
-            user_id, task_id, "processing", progress=10
-        )
+        db_service.update_video_status(user_id, task_id, "processing", progress=10)
         time.sleep(1)
 
         # Step 2: Initializing (20%)
         logger.info(f"📊 Task {task_id}: Updating to 20% - Initializing AI...")
-        db_service.update_video_status(
-            user_id, task_id, "processing", progress=20
-        )
+        db_service.update_video_status(user_id, task_id, "processing", progress=20)
         time.sleep(1)
 
         # Step 3: Get Veo service
         logger.info(f"📊 Task {task_id}: Updating to 30% - Connecting to Veo...")
-        db_service.update_video_status(
-            user_id, task_id, "processing", progress=30
-        )
+        db_service.update_video_status(user_id, task_id, "processing", progress=30)
 
         try:
             veo_service = VeoService()
@@ -127,14 +122,10 @@ def process_video_generation_db(
                 if first_frame_image:
                     logger.info(f"📸 First frame loaded: {first_frame_path}")
                 else:
-                    logger.warning(
-                        "⚠️ First frame not available, falling back to text"
-                    )
+                    logger.warning("⚠️ First frame not available, falling back to text")
                     generation_mode = "text"
             else:
-                logger.warning(
-                    "⚠️ No first frame path provided, falling back to text"
-                )
+                logger.warning("⚠️ No first frame path provided, falling back to text")
                 generation_mode = "text"
 
         if generation_mode == "first-last":
@@ -143,21 +134,15 @@ def process_video_generation_db(
                 if last_frame_image:
                     logger.info(f"📸 Last frame loaded: {last_frame_path}")
                 else:
-                    logger.warning(
-                        "⚠️ Last frame not available, falling back to image"
-                    )
+                    logger.warning("⚠️ Last frame not available, falling back to image")
                     generation_mode = "image"
             else:
-                logger.warning(
-                    "⚠️ No last frame path provided, falling back to image"
-                )
+                logger.warning("⚠️ No last frame path provided, falling back to image")
                 generation_mode = "image"
 
         # Step 5: Generating video (40-80%)
         logger.info(f"📊 Task {task_id}: Updating to 50% - Generating video...")
-        db_service.update_video_status(
-            user_id, task_id, "processing", progress=50
-        )
+        db_service.update_video_status(user_id, task_id, "processing", progress=50)
         time.sleep(2)
 
         # ===== GENERATE BASED ON MODE =====
@@ -183,19 +168,11 @@ def process_video_generation_db(
                     generate_audio=generate_audio,
                     use_lite=False
                 )
-                logger.info(
-                    f"📸 Image-to-Video generation complete: {video_url}"
-                )
+                logger.info(f"📸 Image-to-Video generation complete: {video_url}")
 
-            elif (
-                generation_mode == "first-last"
-                and first_frame_image
-                and last_frame_image
-            ):
+            elif generation_mode == "first-last" and first_frame_image and last_frame_image:
                 # ===== FIRST/LAST FRAME =====
-                logger.info(
-                    f"📸 Task {task_id}: Generating FIRST/LAST FRAME video..."
-                )
+                logger.info(f"📸 Task {task_id}: Generating FIRST/LAST FRAME video...")
                 prompt = (
                     f"Transition showcasing {product_name}. {product_description}. "
                     "Smooth, professional animation. Clean product presentation."
@@ -211,9 +188,7 @@ def process_video_generation_db(
                     generate_audio=generate_audio,
                     use_lite=False
                 )
-                logger.info(
-                    f"📸 First/Last Frame generation complete: {video_url}"
-                )
+                logger.info(f"📸 First/Last Frame generation complete: {video_url}")
 
             else:
                 # ===== TEXT-TO-VIDEO (Default) =====
@@ -224,9 +199,7 @@ def process_video_generation_db(
                     platform=platform,
                     duration=duration
                 )
-                logger.info(
-                    f"📝 Text-to-Video generation complete: {video_url}"
-                )
+                logger.info(f"📝 Text-to-Video generation complete: {video_url}")
 
         except Exception as gen_error:
             logger.error(f"❌ Generation error: {gen_error}")
@@ -241,17 +214,13 @@ def process_video_generation_db(
 
         # Step 6: Generation complete (80%)
         logger.info(f"📊 Task {task_id}: Updating to 80% - Finalizing...")
-        db_service.update_video_status(
-            user_id, task_id, "processing", progress=80
-        )
+        db_service.update_video_status(user_id, task_id, "processing", progress=80)
         time.sleep(1)
 
         if video_url:
             # Step 7: Uploading (90%)
             logger.info(f"📊 Task {task_id}: Updating to 90% - Uploading...")
-            db_service.update_video_status(
-                user_id, task_id, "processing", progress=90
-            )
+            db_service.update_video_status(user_id, task_id, "processing", progress=90)
             time.sleep(1)
 
             # Step 8: Complete (100%)
@@ -264,16 +233,12 @@ def process_video_generation_db(
                 progress=100,
                 video_url=video_url
             )
-            logger.info(
-                f"✅ Task {task_id} completed successfully for user {user_id}"
-            )
+            logger.info(f"✅ Task {task_id} completed successfully for user {user_id}")
 
         else:
             # Fallback to sample video
             fallback_url = random.choice(SAMPLE_VIDEOS)
-            logger.warning(
-                f"⚠️ Task {task_id}: Using fallback video: {fallback_url}"
-            )
+            logger.warning(f"⚠️ Task {task_id}: Using fallback video: {fallback_url}")
             db_service.update_video_status(
                 user_id,
                 task_id,
@@ -296,9 +261,7 @@ def process_video_generation_db(
                 error_message=str(e)
             )
         except Exception as db_error:
-            logger.error(
-                f"❌ Failed to update status in database: {db_error}"
-            )
+            logger.error(f"❌ Failed to update status in database: {db_error}")
 
     finally:
         # ===== CLEAN UP UPLOADED IMAGES =====
